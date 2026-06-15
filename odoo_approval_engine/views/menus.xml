@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- ===== Root Menu: Approvals ===== -->
+    <!-- ===== Root Menu: Approval Engine =====
+         Named distinctly to avoid clashing with Odoo's native "Approvals" app. -->
     <menuitem id="menu_approval_root"
-              name="Approvals"
+              name="Approval Engine"
               sequence="50"
               groups="group_approval_user"/>
 
