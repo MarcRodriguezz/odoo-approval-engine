@@ -6,30 +6,35 @@
         <field name="name">approval.decision.wizard.form</field>
         <field name="model">approval.decision.wizard</field>
         <field name="arch" type="xml">
-            <form string="Record Decision">
+            <form string="Review Approval">
+                <div class="alert alert-info" role="alert">
+                    You are reviewing step <field name="level" class="oe_inline"/> of an approval request.
+                </div>
                 <group>
-                    <group string="Request">
-                        <field name="request_id" readonly="1"/>
-                        <field name="line_id" readonly="1"/>
-                    </group>
+                    <field name="document" readonly="1"/>
+                    <field name="rule_id" readonly="1"/>
+                    <field name="requested_by" readonly="1"/>
                 </group>
-                <group string="Your Decision">
+                <group>
                     <field name="comment"
-                           placeholder="Optional comment or reason for your decision…"
+                           placeholder="Add a comment (required when rejecting)…"
                            nolabel="1"/>
                 </group>
                 <footer>
                     <button name="action_approve"
                             string="Approve"
                             type="object"
-                            class="btn-success"/>
+                            class="btn-success"
+                            data-hotkey="q"/>
                     <button name="action_reject"
                             string="Reject"
                             type="object"
-                            class="btn-danger"/>
+                            class="btn-danger"
+                            data-hotkey="w"/>
                     <button string="Cancel"
                             class="btn-secondary"
-                            special="cancel"/>
+                            special="cancel"
+                            data-hotkey="z"/>
                 </footer>
             </form>
         </field>
@@ -37,7 +42,7 @@
 
     <!-- ===== approval.decision.wizard — Dialog Action ===== -->
     <record id="action_approval_decision_wizard" model="ir.actions.act_window">
-        <field name="name">Record Decision</field>
+        <field name="name">Review Approval</field>
         <field name="res_model">approval.decision.wizard</field>
         <field name="view_mode">form</field>
         <field name="view_id" ref="approval_decision_wizard_form_view"/>

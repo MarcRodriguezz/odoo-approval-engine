@@ -4,15 +4,23 @@ from odoo.exceptions import UserError
 
 
 class ApprovalDecisionWizard(models.TransientModel):
-    """Approve/reject with comment.  Delegates the actual state-machine work
-    to approval.engine.request._register_decision."""
+    """Friendly approve/reject dialog. Delegates the state-machine work to
+    approval.engine.request._register_decision."""
 
     _name = "approval.decision.wizard"
     _description = "Approval Decision Wizard"
 
-    request_id = fields.Many2one("approval.engine.request", required=True, readonly=True)
+    request_id = fields.Many2one(
+        "approval.engine.request", required=True, readonly=True,
+    )
     line_id = fields.Many2one("approval.engine.request.line", readonly=True)
-    comment = fields.Text(string="Comment")
+    comment = fields.Text(string="Comment / Reason")
+
+    # Read-only context for the approver (so they know what they decide on).
+    document = fields.Char(related="line_id.source_document", string="Document")
+    rule_id = fields.Many2one(related="line_id.rule_id", string="Rule")
+    requested_by = fields.Many2one(related="line_id.requested_by", string="Requested by")
+    level = fields.Integer(related="line_id.level", string="Step")
 
     @api.model
     def default_get(self, fields_list):
@@ -23,23 +31,17 @@ class ApprovalDecisionWizard(models.TransientModel):
 
         if active_model == "approval.engine.request.line" and active_id:
             line = self.env["approval.engine.request.line"].browse(active_id)
-            if "line_id" in fields_list:
-                res["line_id"] = line.id
-            if "request_id" in fields_list:
-                res["request_id"] = line.request_id.id
+            res.setdefault("line_id", line.id)
+            res.setdefault("request_id", line.request_id.id)
 
         elif active_model == "approval.engine.request" and active_id:
             request = self.env["approval.engine.request"].browse(active_id)
-            if "request_id" in fields_list:
-                res["request_id"] = request.id
-            # Pick the current user's pending line, if any
-            if "line_id" in fields_list:
-                pending_line = request.line_ids.filtered(
-                    lambda l: l.approver_id == self.env.user
-                    and l.decision == "pending"
-                )
-                if pending_line:
-                    res["line_id"] = pending_line[0].id
+            res.setdefault("request_id", request.id)
+            pending_line = request.line_ids.filtered(
+                lambda l: l.approver_id == self.env.user and l.decision == "pending"
+            )
+            if pending_line:
+                res.setdefault("line_id", pending_line[0].id)
 
         return res
 
@@ -47,55 +49,28 @@ class ApprovalDecisionWizard(models.TransientModel):
         """Register an 'approved' decision for this line."""
         self.ensure_one()
         if not self.line_id:
-            raise UserError(_("No approval line selected."))
-        self.request_id._register_decision(
-            self.line_id, "approved", self.comment
-        )
+            raise UserError(_("No approval step selected."))
+        self.request_id._register_decision(self.line_id, "approved", self.comment)
         return {"type": "ir.actions.act_window_close"}
 
     def action_reject(self):
-        """Register a 'rejected' decision for this line."""
+        """Register a 'rejected' decision for this line. A reason is required."""
         self.ensure_one()
         if not self.line_id:
-            raise UserError(_("No approval line selected."))
-        self.request_id._register_decision(
-            self.line_id, "rejected", self.comment
-        )
+            raise UserError(_("No approval step selected."))
+        if not (self.comment and self.comment.strip()):
+            raise UserError(_("Please provide a reason for rejecting this request."))
+        self.request_id._register_decision(self.line_id, "rejected", self.comment)
         return {"type": "ir.actions.act_window_close"}
 
 
-class ApprovalRequestLineInboxButton(models.Model):
-    """Adds the inbox 'Decide' button helper to approval.engine.request.line.
-    This is a pure UI/action method; business logic lives in approval.request."""
-
-    _inherit = "approval.engine.request.line"
-
-    def action_open_decision_wizard(self):
-        """Open the decision wizard pre-filled for this line."""
-        self.ensure_one()
-        return {
-            "type": "ir.actions.act_window",
-            "name": _("Record Decision"),
-            "res_model": "approval.decision.wizard",
-            "view_mode": "form",
-            "target": "new",
-            "context": {
-                "active_model": "approval.engine.request.line",
-                "active_id": self.id,
-                "default_line_id": self.id,
-                "default_request_id": self.request_id.id,
-            },
-        }
-
-
 class ApprovalRequestSourceButton(models.Model):
-    """Adds the 'Open Source Record' smart-button helper to approval.engine.request.
-    This is a pure UI/navigation method."""
+    """Smart-button helper to open the source record from a request. Generic:
+    works for any governed model (sale.order, purchase.order, ...)."""
 
     _inherit = "approval.engine.request"
 
     def action_open_source_record(self):
-        """Open the linked source record in a form view."""
         self.ensure_one()
         if not self.res_model or not self.res_id:
             raise UserError(_("No source record linked to this request."))

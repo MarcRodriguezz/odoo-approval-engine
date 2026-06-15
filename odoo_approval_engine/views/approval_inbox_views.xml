@@ -1,51 +1,92 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- ===== approval.engine.request.line — Inbox List View ===== -->
+    <!-- ===== Inbox Kanban (the friendly, one-click approval board) ===== -->
+    <record id="approval_inbox_kanban_view" model="ir.ui.view">
+        <field name="name">approval.engine.request.line.inbox.kanban</field>
+        <field name="model">approval.engine.request.line</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_mobile" create="false" group_create="false" sample="1">
+                <templates>
+                    <t t-name="card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <field name="source_document" class="fw-bolder fs-5"/>
+                            <span class="badge text-bg-warning">Step <field name="level"/></span>
+                        </div>
+                        <div class="text-muted mt-1">
+                            <i class="fa fa-gavel me-1" title="Rule"/><field name="rule_id"/>
+                        </div>
+                        <div class="text-muted small mt-1">
+                            <i class="fa fa-user me-1" title="Requested by"/><field name="requested_by"/>
+                            <span class="mx-2">·</span>
+                            <i class="fa fa-clock-o me-1" title="Requested on"/><field name="request_date" widget="date"/>
+                        </div>
+                        <footer class="pt-2 d-flex gap-2">
+                            <button name="action_quick_approve" type="object"
+                                    class="btn btn-success btn-sm">
+                                <i class="fa fa-check me-1" title="Approve"/>Approve
+                            </button>
+                            <button name="action_open_decision_wizard" type="object"
+                                    class="btn btn-outline-danger btn-sm">
+                                <i class="fa fa-times me-1" title="Reject"/>Reject
+                            </button>
+                            <button name="action_open_document" type="object"
+                                    class="btn btn-link btn-sm ms-auto">
+                                View document
+                            </button>
+                        </footer>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- ===== Inbox List (alternative compact view) ===== -->
     <record id="approval_inbox_list_view" model="ir.ui.view">
         <field name="name">approval.engine.request.line.inbox.list</field>
         <field name="model">approval.engine.request.line</field>
         <field name="arch" type="xml">
-            <list string="My Pending Approvals" create="false" delete="false">
-                <field name="request_id"/>
+            <list string="To Approve" create="false" delete="false">
+                <field name="source_document"/>
+                <field name="rule_id"/>
+                <field name="requested_by"/>
                 <field name="level"/>
-                <field name="approver_id" invisible="1"/>
-                <field name="decision" widget="badge"
-                       decoration-warning="decision == 'pending'"
-                       decoration-success="decision == 'approved'"
-                       decoration-danger="decision == 'rejected'"/>
-                <field name="decision_date"/>
-                <button name="action_open_decision_wizard"
-                        string="Decide"
-                        type="object"
-                        icon="fa-check-circle"
-                        class="btn-primary"
+                <field name="request_date"/>
+                <button name="action_quick_approve" type="object"
+                        string="Approve" icon="fa-check" class="text-success"
+                        invisible="decision != 'pending'"/>
+                <button name="action_open_decision_wizard" type="object"
+                        string="Reject" icon="fa-times" class="text-danger"
                         invisible="decision != 'pending'"/>
             </list>
         </field>
     </record>
 
-    <!-- ===== approval.engine.request.line — Inbox Form View (read-only, for drill-down) ===== -->
+    <!-- ===== Inbox drill-down form ===== -->
     <record id="approval_inbox_form_view" model="ir.ui.view">
         <field name="name">approval.engine.request.line.inbox.form</field>
         <field name="model">approval.engine.request.line</field>
         <field name="arch" type="xml">
-            <form string="Approval Line">
+            <form string="Approval">
                 <header>
-                    <button name="action_open_decision_wizard"
-                            string="Make Decision"
-                            type="object"
-                            class="btn-primary"
+                    <button name="action_quick_approve" string="Approve"
+                            type="object" class="btn-success"
+                            invisible="decision != 'pending'"/>
+                    <button name="action_open_decision_wizard" string="Reject"
+                            type="object" class="btn-danger"
                             invisible="decision != 'pending'"/>
                     <field name="decision" widget="statusbar"
                            statusbar_visible="pending,approved,rejected"/>
                 </header>
                 <sheet>
                     <group>
-                        <group string="Request">
-                            <field name="request_id"/>
-                            <field name="level"/>
-                            <field name="approver_id"/>
+                        <group string="What needs approval">
+                            <field name="source_document"/>
+                            <field name="rule_id"/>
+                            <field name="requested_by"/>
+                            <field name="request_date"/>
+                            <button name="action_open_document" type="object"
+                                    string="Open document" class="btn-link"/>
                         </group>
                         <group string="Decision">
                             <field name="decision"/>
@@ -58,23 +99,24 @@
         </field>
     </record>
 
-    <!-- ===== My Pending Approvals — Inbox Action ===== -->
+    <!-- ===== My Approvals — Inbox Action ===== -->
     <record id="action_approval_inbox" model="ir.actions.act_window">
-        <field name="name">My Pending Approvals</field>
+        <field name="name">My Approvals</field>
         <field name="res_model">approval.engine.request.line</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">kanban,list,form</field>
         <field name="domain">[('approver_id', '=', uid), ('decision', '=', 'pending')]</field>
-        <field name="context">{}</field>
         <field name="view_ids"
                eval="[(5, 0, 0),
+                      (0, 0, {'view_mode': 'kanban', 'view_id': ref('approval_inbox_kanban_view')}),
                       (0, 0, {'view_mode': 'list', 'view_id': ref('approval_inbox_list_view')}),
                       (0, 0, {'view_mode': 'form', 'view_id': ref('approval_inbox_form_view')})]"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
-                Your inbox is empty
+                You're all caught up!
             </p>
             <p>
-                Approval requests assigned to you will appear here.
+                Requests waiting for your approval will appear here. Approve or
+                reject them directly from this screen.
             </p>
         </field>
     </record>
