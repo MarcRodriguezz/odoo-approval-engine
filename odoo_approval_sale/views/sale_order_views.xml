@@ -21,4 +21,25 @@
             </xpath>
         </field>
     </record>
+
+    <!-- Show the approval state as a column in the sale orders list -->
+    <record id="view_order_tree_approval_state" model="ir.ui.view">
+        <field name="name">sale.order.list.approval.state</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <field
+                    name="approval_state"
+                    widget="badge"
+                    decoration-warning="approval_state == 'pending'"
+                    decoration-success="approval_state == 'approved'"
+                    decoration-danger="approval_state == 'rejected'"
+                    decoration-muted="approval_state == 'none'"
+                    string="Approval"
+                    optional="show"
+                />
+            </xpath>
+        </field>
+    </record>
 </odoo>

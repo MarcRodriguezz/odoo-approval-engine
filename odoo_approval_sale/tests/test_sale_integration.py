@@ -2,7 +2,7 @@
 """Integration tests for odoo_approval_sale.
 
 Tests cover:
-1. High-value order: action_confirm is blocked; an approval.request in state
+1. High-value order: action_confirm is blocked; an approval.engine.request in state
    'pending' is created; order.approval_state == 'pending'.
 2. Full approval cycle: approving the request triggers _on_approval_approved
    which calls action_confirm(approval_bypass=True) -> order.state == 'sale'.
@@ -42,7 +42,7 @@ class TestSaleIntegration(TransactionCase):
         sale_model = self.env["ir.model"].search(
             [("model", "=", "sale.order")], limit=1
         )
-        self.rule = self.env["approval.rule"].create({
+        self.rule = self.env["approval.engine.rule"].create({
             "name": "Test Sale High Value",
             "active": True,
             "sequence": 1,
@@ -110,12 +110,12 @@ class TestSaleIntegration(TransactionCase):
             order.approval_state, "pending",
             "approval_state must be 'pending' after rule match.",
         )
-        # Exactly one approval.request must exist for this order
-        requests = self.env["approval.request"].search([
+        # Exactly one approval.engine.request must exist for this order
+        requests = self.env["approval.engine.request"].search([
             ("res_model", "=", "sale.order"),
             ("res_id", "=", order.id),
         ])
-        self.assertEqual(len(requests), 1, "Exactly one approval.request expected.")
+        self.assertEqual(len(requests), 1, "Exactly one approval.engine.request expected.")
         self.assertEqual(requests.state, "pending")
 
         # The block action must be a client action (notification)
@@ -129,7 +129,7 @@ class TestSaleIntegration(TransactionCase):
         order = self._make_order(unit_price=20000.0, qty=1)
         order.action_confirm()
 
-        request = self.env["approval.request"].search([
+        request = self.env["approval.engine.request"].search([
             ("res_model", "=", "sale.order"),
             ("res_id", "=", order.id),
             ("state", "=", "pending"),
@@ -164,7 +164,7 @@ class TestSaleIntegration(TransactionCase):
         self.rule.active = False
 
         manager_group = self.env.ref("base.group_system")
-        rule2 = self.env["approval.rule"].create({
+        rule2 = self.env["approval.engine.rule"].create({
             "name": "Two-Level Sale Rule",
             "sequence": 1,
             "model_id": self.env["ir.model"]._get("sale.order").id,
@@ -191,7 +191,7 @@ class TestSaleIntegration(TransactionCase):
         order.action_confirm()
         self.assertNotEqual(order.state, "sale")
 
-        request = self.env["approval.request"].search([
+        request = self.env["approval.engine.request"].search([
             ("res_model", "=", "sale.order"), ("res_id", "=", order.id),
             ("state", "=", "pending"),
         ], limit=1)
@@ -240,7 +240,7 @@ class TestSaleIntegration(TransactionCase):
     # Test 3: low-value order bypasses approval entirely
     # ------------------------------------------------------------------
     def test_low_value_order_passes_directly(self):
-        """Low-value orders must not be intercepted; no approval.request created."""
+        """Low-value orders must not be intercepted; no approval.engine.request created."""
         order = self._make_order(unit_price=500.0, qty=1)
         self.assertAlmostEqual(order.amount_total, 500.0, places=2)
 
@@ -252,14 +252,14 @@ class TestSaleIntegration(TransactionCase):
             "Low-value order must be confirmed without approval.",
         )
 
-        # No approval.request should have been created
-        requests = self.env["approval.request"].search([
+        # No approval.engine.request should have been created
+        requests = self.env["approval.engine.request"].search([
             ("res_model", "=", "sale.order"),
             ("res_id", "=", order.id),
         ])
         self.assertFalse(
             requests,
-            "No approval.request must be created for a low-value order.",
+            "No approval.engine.request must be created for a low-value order.",
         )
 
         # approval_state must be 'none'

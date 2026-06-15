@@ -9,7 +9,7 @@
             <module>.<model_field>  →  sale.model_sale_order
         approver_group_id references the built-in Sales / Manager group.
     -->
-    <record id="approval_rule_sale_high_value" model="approval.rule">
+    <record id="approval_rule_sale_high_value" model="approval.engine.rule">
         <field name="name">Sale Order — High Value (> 10,000)</field>
         <field name="active" eval="True"/>
         <field name="sequence">10</field>

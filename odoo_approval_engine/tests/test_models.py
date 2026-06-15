@@ -26,7 +26,7 @@ class TestApprovalModels(TransactionCase):
             )
             for i in range(levels)
         ]
-        return self.env["approval.rule"].create(
+        return self.env["approval.engine.rule"].create(
             {
                 "name": "Test Rule",
                 "model_id": self.model_partner.id,
@@ -42,7 +42,7 @@ class TestApprovalModels(TransactionCase):
 
     def test_rule_without_levels_raises(self):
         with self.assertRaises(ValidationError):
-            self.env["approval.rule"].create(
+            self.env["approval.engine.rule"].create(
                 {
                     "name": "No Levels",
                     "model_id": self.model_partner.id,
@@ -52,7 +52,7 @@ class TestApprovalModels(TransactionCase):
 
     def test_duplicate_level_sequence_raises(self):
         with self.assertRaises(ValidationError):
-            self.env["approval.rule"].create(
+            self.env["approval.engine.rule"].create(
                 {
                     "name": "Dup Levels",
                     "model_id": self.model_partner.id,
@@ -68,7 +68,7 @@ class TestApprovalModels(TransactionCase):
 
     def test_request_sequence_assigned(self):
         rule = self._make_rule()
-        request = self.env["approval.request"].create(
+        request = self.env["approval.engine.request"].create(
             {
                 "rule_id": rule.id,
                 "res_model": "res.partner",
@@ -80,7 +80,7 @@ class TestApprovalModels(TransactionCase):
 
     def test_min_approvals_constraint(self):
         with self.assertRaises(ValidationError):
-            self.env["approval.rule"].create(
+            self.env["approval.engine.rule"].create(
                 {
                     "name": "Bad Min",
                     "model_id": self.model_partner.id,

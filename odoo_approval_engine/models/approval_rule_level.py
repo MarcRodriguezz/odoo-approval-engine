@@ -4,12 +4,12 @@ from odoo.exceptions import ValidationError
 
 
 class ApprovalRuleLevel(models.Model):
-    _name = "approval.rule.level"
+    _name = "approval.engine.rule.level"
     _description = "Approval Rule Level"
     _order = "sequence, id"
 
     rule_id = fields.Many2one(
-        "approval.rule", required=True, ondelete="cascade"
+        "approval.engine.rule", required=True, ondelete="cascade"
     )
     sequence = fields.Integer(string="Level", required=True, default=1)
     name = fields.Char()

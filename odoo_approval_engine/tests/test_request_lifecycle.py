@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Tests for the approval.request state machine.
+"""Tests for the approval.engine.request state machine.
 
-Tests drive the lifecycle through ``approval.request`` methods directly
+Tests drive the lifecycle through ``approval.engine.request`` methods directly
 (action_submit, _register_decision, _advance_level, _finalize) combined with
 manually created rules/lines so that no UI or wizard layer is required.
 
@@ -18,7 +18,7 @@ from odoo.exceptions import UserError
 
 @tagged("approval", "post_install", "-at_install")
 class TestRequestLifecycle(TransactionCase):
-    """State-machine tests for approval.request."""
+    """State-machine tests for approval.engine.request."""
 
     @classmethod
     def setUpClass(cls):
@@ -66,7 +66,7 @@ class TestRequestLifecycle(TransactionCase):
             )
             for i in range(levels)
         ]
-        return self.env["approval.rule"].create(
+        return self.env["approval.engine.rule"].create(
             {
                 "name": "Lifecycle Rule",
                 "model_id": self.model_partner.id,
@@ -76,8 +76,8 @@ class TestRequestLifecycle(TransactionCase):
         )
 
     def _make_draft_request(self, rule):
-        """Create a draft approval.request for the test partner."""
-        return self.env["approval.request"].create(
+        """Create a draft approval.engine.request for the test partner."""
+        return self.env["approval.engine.request"].create(
             {
                 "rule_id": rule.id,
                 "res_model": "res.partner",
@@ -87,7 +87,7 @@ class TestRequestLifecycle(TransactionCase):
         )
 
     def _make_pending_request(self, rule):
-        """Create a pending approval.request with level-1 lines already generated."""
+        """Create a pending approval.engine.request with level-1 lines already generated."""
         request = self._make_draft_request(rule)
         request.action_submit()
         return request
@@ -289,7 +289,7 @@ class TestRequestLifecycle(TransactionCase):
             }
         )
 
-        rule = self.env["approval.rule"].create(
+        rule = self.env["approval.engine.rule"].create(
             {
                 "name": "MinApprovals2 Rule",
                 "model_id": self.model_partner.id,

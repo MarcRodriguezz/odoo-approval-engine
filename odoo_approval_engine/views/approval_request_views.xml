@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- ===== approval.request — List View ===== -->
+    <!-- ===== approval.engine.request — List View ===== -->
     <record id="approval_request_list_view" model="ir.ui.view">
-        <field name="name">approval.request.list</field>
-        <field name="model">approval.request</field>
+        <field name="name">approval.engine.request.list</field>
+        <field name="model">approval.engine.request</field>
         <field name="arch" type="xml">
             <list string="Approval Requests"
                   decoration-success="state == 'approved'"
@@ -26,10 +26,10 @@
         </field>
     </record>
 
-    <!-- ===== approval.request — Form View ===== -->
+    <!-- ===== approval.engine.request — Form View ===== -->
     <record id="approval_request_form_view" model="ir.ui.view">
-        <field name="name">approval.request.form</field>
-        <field name="model">approval.request</field>
+        <field name="name">approval.engine.request.form</field>
+        <field name="model">approval.engine.request</field>
         <field name="arch" type="xml">
             <form string="Approval Request">
                 <header>
@@ -102,10 +102,10 @@
         </field>
     </record>
 
-    <!-- ===== approval.request — Action ===== -->
+    <!-- ===== approval.engine.request — Action ===== -->
     <record id="action_approval_request" model="ir.actions.act_window">
         <field name="name">Approval Requests</field>
-        <field name="res_model">approval.request</field>
+        <field name="res_model">approval.engine.request</field>
         <field name="view_mode">list,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">

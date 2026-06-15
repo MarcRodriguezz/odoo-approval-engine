@@ -3,9 +3,9 @@
 Security tests.
 
 Verify that:
-  - A non-manager user cannot create or write approval.rule (AccessError).
-  - A manager user can create approval.rule.
-  - An approver cannot read an approval.request they are not involved in (AccessError).
+  - A non-manager user cannot create or write approval.engine.rule (AccessError).
+  - A manager user can create approval.engine.rule.
+  - An approver cannot read an approval.engine.request they are not involved in (AccessError).
 """
 from odoo.exceptions import AccessError
 from odoo.tests.common import TransactionCase
@@ -25,9 +25,9 @@ class TestApprovalSecurity(TransactionCase):
         cls.group_approver = cls.env.ref("odoo_approval_engine.group_approval_approver")
         cls.group_manager = cls.env.ref("odoo_approval_engine.group_approval_manager")
 
-        # Resolve a valid ir.model for use in approval.rule creation
+        # Resolve a valid ir.model for use in approval.engine.rule creation
         cls.ir_model = cls.env["ir.model"].search(
-            [("model", "=", "approval.request")], limit=1
+            [("model", "=", "approval.engine.request")], limit=1
         )
 
         # ---- create users ----
@@ -64,9 +64,9 @@ class TestApprovalSecurity(TransactionCase):
     # ------------------------------------------------------------------
 
     def _make_rule(self, env=None):
-        """Create a minimal approval.rule using the given environment."""
+        """Create a minimal approval.engine.rule using the given environment."""
         env = env or self.env
-        return env["approval.rule"].create(
+        return env["approval.engine.rule"].create(
             {
                 "name": "Test Rule WT3",
                 "model_id": self.ir_model.id,
@@ -81,30 +81,30 @@ class TestApprovalSecurity(TransactionCase):
         )
 
     def _make_request(self, env=None):
-        """Create a minimal approval.request owned by user_other."""
+        """Create a minimal approval.engine.request owned by user_other."""
         env = env or self.env
         # We need at least one rule to reference
         rule = self._make_rule()
-        return env["approval.request"].create(
+        return env["approval.engine.request"].create(
             {
                 "rule_id": rule.id,
-                "res_model": "approval.request",
+                "res_model": "approval.engine.request",
                 "res_id": 1,
                 "requested_by": self.user_other.id,
             }
         )
 
     # ------------------------------------------------------------------
-    # Tests: approval.rule access
+    # Tests: approval.engine.rule access
     # ------------------------------------------------------------------
 
     def test_non_manager_cannot_create_approval_rule(self):
-        """An approver (non-manager) must not be able to create an approval.rule."""
+        """An approver (non-manager) must not be able to create an approval.engine.rule."""
         with self.assertRaises(AccessError):
             self._make_rule(env=self.env(user=self.user_approver))
 
     def test_non_manager_cannot_write_approval_rule(self):
-        """An approver (non-manager) must not be able to write to an approval.rule."""
+        """An approver (non-manager) must not be able to write to an approval.engine.rule."""
         # Manager creates the rule first
         rule = self._make_rule()
         self.env.cr.flush()
@@ -114,18 +114,18 @@ class TestApprovalSecurity(TransactionCase):
             rule.with_user(self.user_approver).write({"name": "Hacked Name"})
 
     def test_manager_can_create_approval_rule(self):
-        """A manager must be able to create an approval.rule without error."""
+        """A manager must be able to create an approval.engine.rule without error."""
         rule = self._make_rule(env=self.env(user=self.user_manager))
-        self.assertTrue(rule.id, "Manager should be able to create an approval.rule")
+        self.assertTrue(rule.id, "Manager should be able to create an approval.engine.rule")
 
     # ------------------------------------------------------------------
-    # Tests: approval.request record rules
+    # Tests: approval.engine.request record rules
     # ------------------------------------------------------------------
 
     def test_approver_cannot_read_unrelated_request(self):
         """
         An approver who is neither the requester nor an approver on any line
-        of a given approval.request must receive an AccessError when reading it.
+        of a given approval.engine.request must receive an AccessError when reading it.
         """
         # Create request as superuser (owned by user_other, no approver lines)
         request = self._make_request()
@@ -148,10 +148,10 @@ class TestApprovalSecurity(TransactionCase):
         self.assertTrue(result, "Requester should be able to read their own request")
 
     def test_manager_can_read_any_request(self):
-        """A manager must be able to read any approval.request."""
+        """A manager must be able to read any approval.engine.request."""
         request = self._make_request()
         self.env.cr.flush()
         self.env.invalidate_all()
 
         result = request.with_user(self.user_manager).read(["name"])
-        self.assertTrue(result, "Manager should be able to read any approval.request")
+        self.assertTrue(result, "Manager should be able to read any approval.engine.request")

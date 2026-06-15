@@ -4,7 +4,7 @@ from odoo.exceptions import UserError
 
 
 class ApprovalRequest(models.Model):
-    _name = "approval.request"
+    _name = "approval.engine.request"
     _description = "Approval Request"
     _inherit = ["mail.thread", "mail.activity.mixin"]
     _order = "request_date desc, id desc"
@@ -12,7 +12,7 @@ class ApprovalRequest(models.Model):
     name = fields.Char(
         default="/", required=True, copy=False, readonly=True, index=True
     )
-    rule_id = fields.Many2one("approval.rule", required=True, ondelete="restrict")
+    rule_id = fields.Many2one("approval.engine.rule", required=True, ondelete="restrict")
     res_model = fields.Char(string="Source Model", required=True, index=True)
     res_id = fields.Integer(string="Source ID", required=True, index=True)
     resource_ref = fields.Reference(
@@ -38,7 +38,7 @@ class ApprovalRequest(models.Model):
     request_date = fields.Datetime(default=fields.Datetime.now)
     current_level = fields.Integer(default=1)
     line_ids = fields.One2many(
-        "approval.request.line", "request_id", string="Approval Lines"
+        "approval.engine.request.line", "request_id", string="Approval Lines"
     )
     company_id = fields.Many2one(
         "res.company", default=lambda self: self.env.company
@@ -62,7 +62,7 @@ class ApprovalRequest(models.Model):
         for vals in vals_list:
             if vals.get("name", "/") == "/":
                 vals["name"] = self.env["ir.sequence"].next_by_code(
-                    "approval.request"
+                    "approval.engine.request"
                 ) or "/"
         return super().create(vals_list)
 
@@ -79,7 +79,7 @@ class ApprovalRequest(models.Model):
         return False
 
     def _get_level_obj(self, level_sequence):
-        """Return the ``approval.rule.level`` for *level_sequence* within rule."""
+        """Return the ``approval.engine.rule.level`` for *level_sequence* within rule."""
         self.ensure_one()
         levels = self.rule_id.level_ids.filtered(
             lambda l: l.sequence == level_sequence
@@ -87,7 +87,7 @@ class ApprovalRequest(models.Model):
         return levels[0] if levels else False
 
     def _generate_lines_for_level(self, level_obj):
-        """Create ``approval.request.line`` records for *level_obj*.
+        """Create ``approval.engine.request.line`` records for *level_obj*.
 
         Resolves approvers via the rule's ``_approval_resolve_approvers`` and
         creates one line per approver at ``level_obj.sequence``.
@@ -95,7 +95,7 @@ class ApprovalRequest(models.Model):
         self.ensure_one()
         source_record = self._get_source_record()
         approvers = self.rule_id._approval_resolve_approvers(level_obj, record=source_record)
-        Line = self.env["approval.request.line"]
+        Line = self.env["approval.engine.request.line"]
         for approver in approvers:
             Line.create(
                 {
@@ -140,7 +140,7 @@ class ApprovalRequest(models.Model):
     def _register_decision(self, line, decision, comment=False):
         """Record an approver decision and advance or finalize the request.
 
-        :param line: ``approval.request.line`` to record decision on.
+        :param line: ``approval.engine.request.line`` to record decision on.
         :param decision: ``'approved'`` or ``'rejected'``.
         :param comment: optional free-text comment.
         """

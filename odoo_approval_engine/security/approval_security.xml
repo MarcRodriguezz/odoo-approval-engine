@@ -45,13 +45,13 @@
     </record>
 
     <!-- ================================================================
-         Record Rules — approval.request
+         Record Rules — approval.engine.request
     ================================================================ -->
 
     <!-- Regular users: read/write own requests (requested_by OR approver on a line) -->
     <record id="rule_approval_request_user" model="ir.rule">
         <field name="name">Approval Request: User sees own requests</field>
-        <field name="model_id" ref="odoo_approval_engine.model_approval_request"/>
+        <field name="model_id" ref="odoo_approval_engine.model_approval_engine_request"/>
         <field name="domain_force">
             ['|',
                 ('requested_by', '=', user.id),
@@ -68,7 +68,7 @@
     <!-- Managers: see all requests, company-scoped -->
     <record id="rule_approval_request_manager" model="ir.rule">
         <field name="name">Approval Request: Manager sees all (company-scoped)</field>
-        <field name="model_id" ref="odoo_approval_engine.model_approval_request"/>
+        <field name="model_id" ref="odoo_approval_engine.model_approval_engine_request"/>
         <field name="domain_force">
             ['|',
                 ('company_id', '=', False),
@@ -83,13 +83,13 @@
     </record>
 
     <!-- ================================================================
-         Record Rules — approval.request.line
+         Record Rules — approval.engine.request.line
     ================================================================ -->
 
     <!-- Regular users: see lines belonging to requests they can access -->
     <record id="rule_approval_request_line_user" model="ir.rule">
         <field name="name">Approval Request Line: User sees own lines</field>
-        <field name="model_id" ref="odoo_approval_engine.model_approval_request_line"/>
+        <field name="model_id" ref="odoo_approval_engine.model_approval_engine_request_line"/>
         <field name="domain_force">
             ['|',
                 ('request_id.requested_by', '=', user.id),
@@ -106,7 +106,7 @@
     <!-- Managers: see all lines, company-scoped -->
     <record id="rule_approval_request_line_manager" model="ir.rule">
         <field name="name">Approval Request Line: Manager sees all (company-scoped)</field>
-        <field name="model_id" ref="odoo_approval_engine.model_approval_request_line"/>
+        <field name="model_id" ref="odoo_approval_engine.model_approval_engine_request_line"/>
         <field name="domain_force">
             ['|',
                 ('request_id.company_id', '=', False),

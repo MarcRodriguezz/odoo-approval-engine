@@ -5,7 +5,7 @@ from odoo.tools.safe_eval import safe_eval
 
 
 class ApprovalRule(models.Model):
-    _name = "approval.rule"
+    _name = "approval.engine.rule"
     _description = "Approval Rule"
     _order = "sequence, id"
 
@@ -49,7 +49,7 @@ class ApprovalRule(models.Model):
         "Context: record, user, datetime, relativedelta.",
     )
     level_ids = fields.One2many(
-        "approval.rule.level", "rule_id", string="Approval Levels"
+        "approval.engine.rule.level", "rule_id", string="Approval Levels"
     )
     company_id = fields.Many2one(
         "res.company", default=lambda self: self.env.company
@@ -73,9 +73,9 @@ class ApprovalRule(models.Model):
     # --- Engine hooks -------------------------------------------------------
 
     def _approval_resolve_approvers(self, level, record=None):
-        """Return a ``res.users`` recordset for the given ``approval.rule.level``.
+        """Return a ``res.users`` recordset for the given ``approval.engine.rule.level``.
 
-        :param level: ``approval.rule.level`` record (must belong to ``self``).
+        :param level: ``approval.engine.rule.level`` record (must belong to ``self``).
         :param record: optional source record used as ``record`` in expression
                        context.  Pass the governed record so that dynamic
                        expressions can reference it.

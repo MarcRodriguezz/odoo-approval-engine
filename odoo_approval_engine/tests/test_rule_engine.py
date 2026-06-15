@@ -11,8 +11,8 @@ Here we unit-test the two helpers that have no inter-method ``self`` calls:
 
 * ``_approval_match_domain`` — invoked *unbound* with a ``res.partner`` record
   as ``self`` (it only uses ``self.search_count`` + the rule).
-* ``approval.rule._approval_resolve_approvers`` — a concrete method on
-  ``approval.rule`` (group + expression resolution).
+* ``approval.engine.rule._approval_resolve_approvers`` — a concrete method on
+  ``approval.engine.rule`` (group + expression resolution).
 """
 from odoo.tests.common import TransactionCase
 from odoo.tests import tagged
@@ -46,7 +46,7 @@ class TestRuleEngine(TransactionCase):
             "level_ids": [level],
         }
         vals.update(kw)
-        return self.env["approval.rule"].create(vals)
+        return self.env["approval.engine.rule"].create(vals)
 
     # --- _approval_match_domain ----------------------------------------
 

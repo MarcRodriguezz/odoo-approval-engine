@@ -16,7 +16,7 @@ class ApprovalEngineMixin(models.AbstractModel):
     _description = "Approval Engine Mixin"
 
     approval_request_ids = fields.One2many(
-        "approval.request",
+        "approval.engine.request",
         compute="_compute_approval_requests",
         string="Approval Requests",
     )
@@ -35,8 +35,8 @@ class ApprovalEngineMixin(models.AbstractModel):
         # sudo: this is a display-only computed field on the governed record,
         # so any user who can see that record (e.g. a salesperson on a sale
         # order) can compute it without needing approval-engine groups. The
-        # approval.request views still enforce their own access rules.
-        Request = self.env["approval.request"].sudo()
+        # approval.engine.request views still enforce their own access rules.
+        Request = self.env["approval.engine.request"].sudo()
         for record in self:
             requests = Request.search(
                 [("res_model", "=", record._name), ("res_id", "=", record.id)]
@@ -66,7 +66,7 @@ class ApprovalEngineMixin(models.AbstractModel):
         # sudo: the triggering user (e.g. a salesperson confirming an order) is
         # not necessarily an approval-engine user, but the engine must still be
         # able to read rules and open requests on their behalf.
-        rules = self.env["approval.rule"].sudo().search(
+        rules = self.env["approval.engine.rule"].sudo().search(
             [
                 ("model_name", "=", self._name),
                 ("trigger_event", "=", trigger_event),
@@ -97,7 +97,7 @@ class ApprovalEngineMixin(models.AbstractModel):
                     continue
 
             # 3. Duplicate open-request guard
-            existing = self.env["approval.request"].sudo().search(
+            existing = self.env["approval.engine.request"].sudo().search(
                 [
                     ("res_model", "=", self._name),
                     ("res_id", "=", self.id),
@@ -138,14 +138,14 @@ class ApprovalEngineMixin(models.AbstractModel):
         return self.search_count(full_domain) > 0
 
     def _approval_create_request(self, rule):
-        """Create an ``approval.request`` in state *pending* for this record
+        """Create an ``approval.engine.request`` in state *pending* for this record
         under *rule*, generate level-1 lines, and notify approvers.
 
-        Returns the newly created ``approval.request``.
+        Returns the newly created ``approval.engine.request``.
         """
         # sudo: created on behalf of the triggering user (who may lack approval
         # rights); requested_by still records the real user.
-        request = self.env["approval.request"].sudo().create(
+        request = self.env["approval.engine.request"].sudo().create(
             {
                 "rule_id": rule.id,
                 "res_model": self._name,

@@ -5,13 +5,13 @@ from odoo.exceptions import UserError
 
 class ApprovalDecisionWizard(models.TransientModel):
     """Approve/reject with comment.  Delegates the actual state-machine work
-    to approval.request._register_decision."""
+    to approval.engine.request._register_decision."""
 
     _name = "approval.decision.wizard"
     _description = "Approval Decision Wizard"
 
-    request_id = fields.Many2one("approval.request", required=True, readonly=True)
-    line_id = fields.Many2one("approval.request.line", readonly=True)
+    request_id = fields.Many2one("approval.engine.request", required=True, readonly=True)
+    line_id = fields.Many2one("approval.engine.request.line", readonly=True)
     comment = fields.Text(string="Comment")
 
     @api.model
@@ -21,15 +21,15 @@ class ApprovalDecisionWizard(models.TransientModel):
         active_model = ctx.get("active_model")
         active_id = ctx.get("active_id")
 
-        if active_model == "approval.request.line" and active_id:
-            line = self.env["approval.request.line"].browse(active_id)
+        if active_model == "approval.engine.request.line" and active_id:
+            line = self.env["approval.engine.request.line"].browse(active_id)
             if "line_id" in fields_list:
                 res["line_id"] = line.id
             if "request_id" in fields_list:
                 res["request_id"] = line.request_id.id
 
-        elif active_model == "approval.request" and active_id:
-            request = self.env["approval.request"].browse(active_id)
+        elif active_model == "approval.engine.request" and active_id:
+            request = self.env["approval.engine.request"].browse(active_id)
             if "request_id" in fields_list:
                 res["request_id"] = request.id
             # Pick the current user's pending line, if any
@@ -65,10 +65,10 @@ class ApprovalDecisionWizard(models.TransientModel):
 
 
 class ApprovalRequestLineInboxButton(models.Model):
-    """Adds the inbox 'Decide' button helper to approval.request.line.
+    """Adds the inbox 'Decide' button helper to approval.engine.request.line.
     This is a pure UI/action method; business logic lives in approval.request."""
 
-    _inherit = "approval.request.line"
+    _inherit = "approval.engine.request.line"
 
     def action_open_decision_wizard(self):
         """Open the decision wizard pre-filled for this line."""
@@ -80,7 +80,7 @@ class ApprovalRequestLineInboxButton(models.Model):
             "view_mode": "form",
             "target": "new",
             "context": {
-                "active_model": "approval.request.line",
+                "active_model": "approval.engine.request.line",
                 "active_id": self.id,
                 "default_line_id": self.id,
                 "default_request_id": self.request_id.id,
@@ -89,10 +89,10 @@ class ApprovalRequestLineInboxButton(models.Model):
 
 
 class ApprovalRequestSourceButton(models.Model):
-    """Adds the 'Open Source Record' smart-button helper to approval.request.
+    """Adds the 'Open Source Record' smart-button helper to approval.engine.request.
     This is a pure UI/navigation method."""
 
-    _inherit = "approval.request"
+    _inherit = "approval.engine.request"
 
     def action_open_source_record(self):
         """Open the linked source record in a form view."""

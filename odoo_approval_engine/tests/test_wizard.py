@@ -20,7 +20,7 @@ class TestApprovalDecisionWizard(TransactionCase):
         cls.group_user = cls.env.ref("base.group_user")
 
         # Create a minimal approval rule with one level
-        cls.rule = cls.env["approval.rule"].create(
+        cls.rule = cls.env["approval.engine.rule"].create(
             {
                 "name": "Wizard Test Rule",
                 "model_id": cls.model_partner.id,
@@ -45,8 +45,8 @@ class TestApprovalDecisionWizard(TransactionCase):
         cls.partner = cls.env["res.partner"].create({"name": "Wizard Test Partner"})
 
     def _create_request_with_line(self, decision="pending"):
-        """Helper: create an approval.request and a pending line for env.user."""
-        request = self.env["approval.request"].create(
+        """Helper: create an approval.engine.request and a pending line for env.user."""
+        request = self.env["approval.engine.request"].create(
             {
                 "rule_id": self.rule.id,
                 "res_model": "res.partner",
@@ -54,7 +54,7 @@ class TestApprovalDecisionWizard(TransactionCase):
                 "state": "pending",
             }
         )
-        line = self.env["approval.request.line"].create(
+        line = self.env["approval.engine.request.line"].create(
             {
                 "request_id": request.id,
                 "level": 1,
@@ -74,7 +74,7 @@ class TestApprovalDecisionWizard(TransactionCase):
         wizard = (
             self.env["approval.decision.wizard"]
             .with_context(
-                active_model="approval.request.line",
+                active_model="approval.engine.request.line",
                 active_id=line.id,
             )
             .create(
@@ -93,7 +93,7 @@ class TestApprovalDecisionWizard(TransactionCase):
         defaults = (
             self.env["approval.decision.wizard"]
             .with_context(
-                active_model="approval.request",
+                active_model="approval.engine.request",
                 active_id=request.id,
             )
             .default_get(["request_id", "line_id"])
@@ -201,7 +201,7 @@ class TestApprovalDecisionWizard(TransactionCase):
             wizard.action_reject()
 
     # ------------------------------------------------------------------
-    # Inbox helper: action_open_decision_wizard on approval.request.line
+    # Inbox helper: action_open_decision_wizard on approval.engine.request.line
     # ------------------------------------------------------------------
 
     def test_open_decision_wizard_returns_act_window(self):
