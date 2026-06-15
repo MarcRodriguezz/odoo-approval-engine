@@ -273,8 +273,11 @@ class ApprovalRequest(models.Model):
 
         # Call source-record hook (governed models carry it via the mixin;
         # guard so requests against non-governed models stay robust).
+        # sudo: the approval itself is the authorization, so the held action
+        # runs regardless of the approver's rights on the source model.
         source = self._get_source_record()
         if source:
+            source = source.sudo()
             if approved and hasattr(source, "_on_approval_approved"):
                 source._on_approval_approved()
             elif not approved and hasattr(source, "_on_approval_rejected"):

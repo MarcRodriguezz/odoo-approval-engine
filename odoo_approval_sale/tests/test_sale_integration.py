@@ -214,6 +214,29 @@ class TestSaleIntegration(TransactionCase):
         self.assertEqual(order.state, "sale")
 
     # ------------------------------------------------------------------
+    # Test 2c: a salesperson WITHOUT approval rights can still trigger it
+    # ------------------------------------------------------------------
+    def test_salesperson_without_approval_rights_can_confirm(self):
+        """Regression: confirming a high-value order as a plain salesperson
+        (not in any approval group) must NOT raise AccessError; the engine
+        creates the request on their behalf via sudo."""
+        salesperson = self.env["res.users"].create({
+            "name": "Plain Salesperson",
+            "login": "plain_salesperson_sale@example.com",
+            "group_ids": [(4, self.env.ref("sales_team.group_sale_salesman").id)],
+        })
+        order = self._make_order(unit_price=25000.0, qty=1)
+        order.partner_id = self.partner
+
+        # Act as the salesperson — this used to raise AccessError on the
+        # approval_request_ids compute / rule search.
+        order_as_user = order.with_user(salesperson)
+        order_as_user.action_confirm()  # must not raise
+
+        self.assertNotEqual(order_as_user.state, "sale")
+        self.assertEqual(order_as_user.approval_state, "pending")
+
+    # ------------------------------------------------------------------
     # Test 3: low-value order bypasses approval entirely
     # ------------------------------------------------------------------
     def test_low_value_order_passes_directly(self):

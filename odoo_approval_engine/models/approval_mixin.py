@@ -32,7 +32,11 @@ class ApprovalEngineMixin(models.AbstractModel):
     )
 
     def _compute_approval_requests(self):
-        Request = self.env["approval.request"]
+        # sudo: this is a display-only computed field on the governed record,
+        # so any user who can see that record (e.g. a salesperson on a sale
+        # order) can compute it without needing approval-engine groups. The
+        # approval.request views still enforce their own access rules.
+        Request = self.env["approval.request"].sudo()
         for record in self:
             requests = Request.search(
                 [("res_model", "=", record._name), ("res_id", "=", record.id)]
@@ -59,7 +63,10 @@ class ApprovalEngineMixin(models.AbstractModel):
         created).  Returns False when no rule matched.
         """
         self.ensure_one()
-        rules = self.env["approval.rule"].search(
+        # sudo: the triggering user (e.g. a salesperson confirming an order) is
+        # not necessarily an approval-engine user, but the engine must still be
+        # able to read rules and open requests on their behalf.
+        rules = self.env["approval.rule"].sudo().search(
             [
                 ("model_name", "=", self._name),
                 ("trigger_event", "=", trigger_event),
@@ -90,7 +97,7 @@ class ApprovalEngineMixin(models.AbstractModel):
                     continue
 
             # 3. Duplicate open-request guard
-            existing = self.env["approval.request"].search(
+            existing = self.env["approval.request"].sudo().search(
                 [
                     ("res_model", "=", self._name),
                     ("res_id", "=", self.id),
@@ -136,7 +143,9 @@ class ApprovalEngineMixin(models.AbstractModel):
 
         Returns the newly created ``approval.request``.
         """
-        request = self.env["approval.request"].create(
+        # sudo: created on behalf of the triggering user (who may lack approval
+        # rights); requested_by still records the real user.
+        request = self.env["approval.request"].sudo().create(
             {
                 "rule_id": rule.id,
                 "res_model": self._name,
@@ -162,8 +171,8 @@ class ApprovalEngineMixin(models.AbstractModel):
         )
 
         # Notify approvers via activity / message
-        approvers = self.env["approval.request.line"].search(
-            [("request_id", "=", request.id), ("level", "=", 1)]
+        approvers = request.line_ids.filtered(
+            lambda l: l.level == 1
         ).mapped("approver_id")
 
         if approvers:
