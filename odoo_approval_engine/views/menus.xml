@@ -5,6 +5,7 @@
          Named distinctly to avoid clashing with Odoo's native "Approvals" app. -->
     <menuitem id="menu_approval_root"
               name="Approval Engine"
+              web_icon="odoo_approval_engine,static/description/icon.png"
               sequence="50"
               groups="group_approval_user"/>
 

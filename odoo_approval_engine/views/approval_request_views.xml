@@ -33,14 +33,21 @@
         <field name="arch" type="xml">
             <form string="Approval Request">
                 <header>
+                    <button name="action_reset_to_pending"
+                            string="Reopen"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state == 'pending'"
+                            help="Reopen this request so it can be approved or rejected again."/>
                     <button name="action_cancel"
                             string="Cancel"
                             type="object"
                             class="btn-secondary"
-                            invisible="state in ('approved', 'rejected', 'cancelled')"
+                            invisible="state == 'cancelled'"
                             confirm="Are you sure you want to cancel this approval request?"/>
                     <field name="state" widget="statusbar"
-                           statusbar_visible="draft,pending,approved,rejected"/>
+                           statusbar_visible="draft,pending,approved,rejected"
+                           options="{'clickable': true}"/>
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">

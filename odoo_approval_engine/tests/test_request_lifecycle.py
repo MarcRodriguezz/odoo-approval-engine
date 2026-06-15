@@ -353,6 +353,32 @@ class TestRequestLifecycle(TransactionCase):
         request.action_cancel()
         self.assertEqual(request.state, "cancelled")
 
+    def test_reopen_cancelled_request_can_be_approved(self):
+        """A cancelled request can be reopened and approved again."""
+        rule = self._make_rule(levels=1)
+        request = self._make_pending_request(rule)
+        request.action_cancel()
+        self.assertEqual(request.state, "cancelled")
+
+        request.action_reset_to_pending()
+        self.assertEqual(request.state, "pending")
+
+        line = request.line_ids.filtered(
+            lambda l: l.level == request.current_level and l.decision == "pending"
+        )
+        self.assertTrue(line, "Reopened request must have a pending line again.")
+        request._register_decision(line[0], "approved")
+        self.assertEqual(request.state, "approved")
+
+    def test_reopen_approved_request(self):
+        """An already-approved request can be reopened to 'pending'."""
+        rule = self._make_rule(levels=1)
+        request = self._make_pending_request(rule)
+        request._register_decision(request.line_ids[0], "approved")
+        self.assertEqual(request.state, "approved")
+        request.action_reset_to_pending()
+        self.assertEqual(request.state, "pending")
+
     # ------------------------------------------------------------------
     # Tests: decision on non-pending request raises UserError
     # ------------------------------------------------------------------

@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e-20260528\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-15 12:06+0000\n"
-"PO-Revision-Date: 2026-06-15 12:06+0000\n"
+"POT-Creation-Date: 2026-06-15 13:18+0000\n"
+"PO-Revision-Date: 2026-06-15 13:18+0000\n"
 "Last-Translator: \n"
 "Language: es\n"
 "Language-Team: \n"
@@ -19,6 +19,7 @@ msgstr ""
 #. module: odoo_approval_sale
 #: model_terms:ir.ui.view,arch_db:odoo_approval_sale.view_order_form_approval_state
 #: model_terms:ir.ui.view,arch_db:odoo_approval_sale.view_order_tree_approval_state
+#: model_terms:ir.ui.view,arch_db:odoo_approval_sale.view_quotation_tree_approval_state
 msgid "Approval"
 msgstr "Aprobación"
 

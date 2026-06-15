@@ -1,44 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Extend the sale order form to show the approval state badge in the header -->
+    <!-- Form: approval state badge next to the status bar -->
     <record id="view_order_form_approval_state" model="ir.ui.view">
         <field name="name">sale.order.form.approval.state</field>
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
-            <!-- Insert an approval_state badge widget just before the status bar -->
             <xpath expr="//header/field[@name='state']" position="before">
-                <field
-                    name="approval_state"
-                    widget="badge"
-                    decoration-warning="approval_state == 'pending'"
-                    decoration-success="approval_state == 'approved'"
-                    decoration-danger="approval_state == 'rejected'"
-                    decoration-muted="approval_state == 'none'"
-                    string="Approval"
-                    optional="show"
-                />
+                <field name="approval_state" widget="badge"
+                       decoration-warning="approval_state == 'pending'"
+                       decoration-success="approval_state == 'approved'"
+                       decoration-danger="approval_state == 'rejected'"
+                       decoration-muted="approval_state == 'none'"
+                       string="Approval"
+                       invisible="approval_state == 'none'"/>
             </xpath>
         </field>
     </record>
 
-    <!-- Show the approval state as a column in the sale orders list -->
+    <!-- Sales Orders list: approval column -->
     <record id="view_order_tree_approval_state" model="ir.ui.view">
         <field name="name">sale.order.list.approval.state</field>
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_tree"/>
         <field name="arch" type="xml">
             <xpath expr="//list" position="inside">
-                <field
-                    name="approval_state"
-                    widget="badge"
-                    decoration-warning="approval_state == 'pending'"
-                    decoration-success="approval_state == 'approved'"
-                    decoration-danger="approval_state == 'rejected'"
-                    decoration-muted="approval_state == 'none'"
-                    string="Approval"
-                    optional="show"
-                />
+                <field name="approval_state" widget="badge"
+                       decoration-warning="approval_state == 'pending'"
+                       decoration-success="approval_state == 'approved'"
+                       decoration-danger="approval_state == 'rejected'"
+                       decoration-muted="approval_state == 'none'"
+                       string="Approval" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Quotations list: approval column (this is the list users see first) -->
+    <record id="view_quotation_tree_approval_state" model="ir.ui.view">
+        <field name="name">sale.quotation.list.approval.state</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_quotation_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <field name="approval_state" widget="badge"
+                       decoration-warning="approval_state == 'pending'"
+                       decoration-success="approval_state == 'approved'"
+                       decoration-danger="approval_state == 'rejected'"
+                       decoration-muted="approval_state == 'none'"
+                       string="Approval" optional="show"/>
             </xpath>
         </field>
     </record>

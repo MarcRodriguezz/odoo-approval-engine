@@ -284,4 +284,37 @@ class ApprovalRequest(models.Model):
                 source._on_approval_rejected()
 
     def action_cancel(self):
-        self.write({"state": "cancelled"})
+        for request in self:
+            request.write({"state": "cancelled"})
+            request.message_post(
+                body=_("Approval request cancelled."),
+                subtype_xmlid="mail.mt_note",
+            )
+
+    def action_reset_to_pending(self):
+        """Reopen a finished or cancelled request so it can be decided again.
+
+        Works from any state (approved / rejected / cancelled): it restores the
+        current step's lines to 'pending' so approvers can act once more.
+        """
+        for request in self:
+            level = request._get_level_obj(request.current_level) \
+                or request._get_level_obj(1)
+            if level:
+                request.current_level = level.sequence
+                existing = request.line_ids.filtered(
+                    lambda l: l.level == level.sequence
+                )
+                if existing:
+                    existing.write({
+                        "decision": "pending",
+                        "decision_date": False,
+                        "comment": False,
+                    })
+                else:
+                    request._generate_lines_for_level(level)
+            request.write({"state": "pending"})
+            request.message_post(
+                body=_("Request reopened for approval."),
+                subtype_xmlid="mail.mt_note",
+            )

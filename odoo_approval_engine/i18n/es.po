@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e-20260528\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-15 12:06+0000\n"
-"PO-Revision-Date: 2026-06-15 12:06+0000\n"
+"POT-Creation-Date: 2026-06-15 13:18+0000\n"
+"PO-Revision-Date: 2026-06-15 13:18+0000\n"
 "Last-Translator: \n"
 "Language: es\n"
 "Language-Team: \n"
@@ -192,6 +192,12 @@ msgstr "Estado de aprobación"
 #: code:addons/odoo_approval_engine/models/approval_rule.py:0
 msgid "Approval levels in rule '%s' must have unique sequences."
 msgstr "Los niveles de aprobación de la regla '%s' deben tener secuencias únicas."
+
+#. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_request.py:0
+msgid "Approval request cancelled."
+msgstr "Solicitud de aprobación cancelada."
 
 #. module: odoo_approval_engine
 #. odoo-python
@@ -746,6 +752,16 @@ msgid "Rejected"
 msgstr "Rechazado"
 
 #. module: odoo_approval_engine
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_form_view
+msgid "Reopen"
+msgstr "Reabrir"
+
+#. module: odoo_approval_engine
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_form_view
+msgid "Reopen this request so it can be approved or rejected again."
+msgstr "Reabre esta solicitud para poder aprobarla o rechazarla de nuevo."
+
+#. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_decision_wizard__request_id
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request_line__request_id
 msgid "Request"
@@ -772,6 +788,12 @@ msgstr "Solicitud totalmente aprobada."
 #: code:addons/odoo_approval_engine/models/approval_request.py:0
 msgid "Request rejected."
 msgstr "Solicitud rechazada."
+
+#. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_request.py:0
+msgid "Request reopened for approval."
+msgstr "Solicitud reabierta para aprobación."
 
 #. module: odoo_approval_engine
 #. odoo-python
