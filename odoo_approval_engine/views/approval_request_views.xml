@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===== approval.request — List View ===== -->
+    <record id="approval_request_list_view" model="ir.ui.view">
+        <field name="name">approval.request.list</field>
+        <field name="model">approval.request</field>
+        <field name="arch" type="xml">
+            <list string="Approval Requests"
+                  decoration-success="state == 'approved'"
+                  decoration-danger="state == 'rejected'"
+                  decoration-warning="state == 'pending'"
+                  decoration-muted="state in ('cancelled', 'draft')">
+                <field name="name"/>
+                <field name="rule_id"/>
+                <field name="resource_ref"/>
+                <field name="requested_by"/>
+                <field name="request_date"/>
+                <field name="state"
+                       decoration-success="state == 'approved'"
+                       decoration-danger="state == 'rejected'"
+                       decoration-warning="state == 'pending'"
+                       decoration-muted="state in ('cancelled', 'draft')"
+                       widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ===== approval.request — Form View ===== -->
+    <record id="approval_request_form_view" model="ir.ui.view">
+        <field name="name">approval.request.form</field>
+        <field name="model">approval.request</field>
+        <field name="arch" type="xml">
+            <form string="Approval Request">
+                <header>
+                    <button name="action_cancel"
+                            string="Cancel"
+                            type="object"
+                            class="btn-secondary"
+                            invisible="state in ('approved', 'rejected', 'cancelled')"
+                            confirm="Are you sure you want to cancel this approval request?"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,pending,approved,rejected"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <!-- Smart button: open source record via server action -->
+                        <button class="oe_stat_button"
+                                name="action_open_source_record"
+                                type="object"
+                                icon="fa-external-link"
+                                invisible="not resource_ref">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Source</span>
+                                <span class="o_stat_text">Record</span>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Request Details">
+                            <field name="rule_id" readonly="state != 'draft'"/>
+                            <field name="resource_ref" readonly="1"/>
+                            <field name="requested_by" readonly="1"/>
+                            <field name="request_date" readonly="1"/>
+                            <field name="current_level" readonly="1"/>
+                        </group>
+                        <group string="Source">
+                            <field name="res_model" readonly="1"/>
+                            <field name="res_id" readonly="1"/>
+                            <field name="company_id" groups="base.group_multi_company"
+                                   readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Approval Lines" name="lines">
+                            <field name="line_ids">
+                                <list string="Approval Lines" editable="bottom"
+                                      decoration-success="decision == 'approved'"
+                                      decoration-danger="decision == 'rejected'"
+                                      decoration-warning="decision == 'pending'">
+                                    <field name="level"/>
+                                    <field name="approver_id"/>
+                                    <field name="decision" widget="badge"
+                                           decoration-success="decision == 'approved'"
+                                           decoration-danger="decision == 'rejected'"
+                                           decoration-warning="decision == 'pending'"/>
+                                    <field name="decision_date"/>
+                                    <field name="comment"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ===== approval.request — Action ===== -->
+    <record id="action_approval_request" model="ir.actions.act_window">
+        <field name="name">Approval Requests</field>
+        <field name="res_model">approval.request</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No approval requests yet
+            </p>
+            <p>
+                Approval requests are created automatically when a configured
+                rule is triggered on a business record.
+            </p>
+        </field>
+    </record>
+
+</odoo>

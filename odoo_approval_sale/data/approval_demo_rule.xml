@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!--
+        Demo approval rule: any sale order with amount_total > 10,000
+        must be approved by a Sales Manager before confirmation.
+
+        model_id uses the auto-generated external id `sale.model_sale_order`
+        which Odoo registers for every installed model as:
+            <module>.<model_field>  →  sale.model_sale_order
+        approver_group_id references the built-in Sales / Manager group.
+    -->
+    <record id="approval_rule_sale_high_value" model="approval.rule">
+        <field name="name">Sale Order — High Value (> 10,000)</field>
+        <field name="active" eval="True"/>
+        <field name="sequence">10</field>
+        <field name="model_id" ref="sale.model_sale_order"/>
+        <field name="trigger_event">on_confirm</field>
+        <field name="condition_python">record.amount_total &gt; 10000</field>
+        <field name="level_ids" eval="[
+            (0, 0, {
+                'sequence': 1,
+                'name': 'Sales Manager Approval',
+                'approver_type': 'group',
+                'approver_group_id': ref('sales_team.group_sale_manager'),
+                'min_approvals': 1,
+            })
+        ]"/>
+    </record>
+</odoo>

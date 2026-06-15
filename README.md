@@ -69,4 +69,20 @@ odoo_approval_engine/
 
 ## Status
 
-Early development. See [docs/](docs/) for the architecture and design notes.
+**MVP complete (v0.1.0-mvp)** — validated on Odoo 19. Two modules:
+
+- `odoo_approval_engine` — model-agnostic core (rules, engine, requests, inbox UI, security).
+- `odoo_approval_sale` — `sale.order` integration (high-value orders require approval).
+
+**48 automated tests green** (core + sale integration incl. a multi-level e2e scenario).
+
+See [docs/](docs/) for the architecture and design notes.
+
+### Quick start (local Docker Odoo 19)
+
+```bash
+docker exec odoo19-app odoo -d <db> -i odoo_approval_sale \
+  --db_host=db --db_user=odoo --db_password=odoo --stop-after-init
+```
+
+Then open the *Approvals* menu → *Configuration > Rules* to define rules, and *My Inbox* to approve.

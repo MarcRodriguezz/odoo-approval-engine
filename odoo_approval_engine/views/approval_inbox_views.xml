@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===== approval.request.line — Inbox List View ===== -->
+    <record id="approval_inbox_list_view" model="ir.ui.view">
+        <field name="name">approval.request.line.inbox.list</field>
+        <field name="model">approval.request.line</field>
+        <field name="arch" type="xml">
+            <list string="My Pending Approvals" create="false" delete="false">
+                <field name="request_id"/>
+                <field name="level"/>
+                <field name="approver_id" invisible="1"/>
+                <field name="decision" widget="badge"
+                       decoration-warning="decision == 'pending'"
+                       decoration-success="decision == 'approved'"
+                       decoration-danger="decision == 'rejected'"/>
+                <field name="decision_date"/>
+                <button name="action_open_decision_wizard"
+                        string="Decide"
+                        type="object"
+                        icon="fa-check-circle"
+                        class="btn-primary"
+                        invisible="decision != 'pending'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ===== approval.request.line — Inbox Form View (read-only, for drill-down) ===== -->
+    <record id="approval_inbox_form_view" model="ir.ui.view">
+        <field name="name">approval.request.line.inbox.form</field>
+        <field name="model">approval.request.line</field>
+        <field name="arch" type="xml">
+            <form string="Approval Line">
+                <header>
+                    <button name="action_open_decision_wizard"
+                            string="Make Decision"
+                            type="object"
+                            class="btn-primary"
+                            invisible="decision != 'pending'"/>
+                    <field name="decision" widget="statusbar"
+                           statusbar_visible="pending,approved,rejected"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group string="Request">
+                            <field name="request_id"/>
+                            <field name="level"/>
+                            <field name="approver_id"/>
+                        </group>
+                        <group string="Decision">
+                            <field name="decision"/>
+                            <field name="decision_date"/>
+                            <field name="comment"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ===== My Pending Approvals — Inbox Action ===== -->
+    <record id="action_approval_inbox" model="ir.actions.act_window">
+        <field name="name">My Pending Approvals</field>
+        <field name="res_model">approval.request.line</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('approver_id', '=', uid), ('decision', '=', 'pending')]</field>
+        <field name="context">{}</field>
+        <field name="view_ids"
+               eval="[(5, 0, 0),
+                      (0, 0, {'view_mode': 'list', 'view_id': ref('approval_inbox_list_view')}),
+                      (0, 0, {'view_mode': 'form', 'view_id': ref('approval_inbox_form_view')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Your inbox is empty
+            </p>
+            <p>
+                Approval requests assigned to you will appear here.
+            </p>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===== Root Menu: Approvals ===== -->
+    <menuitem id="menu_approval_root"
+              name="Approvals"
+              sequence="50"
+              groups="group_approval_user"/>
+
+    <!-- ===== My Inbox ===== -->
+    <menuitem id="menu_approval_inbox"
+              name="My Inbox"
+              parent="menu_approval_root"
+              action="action_approval_inbox"
+              sequence="10"
+              groups="group_approval_user"/>
+
+    <!-- ===== Requests ===== -->
+    <menuitem id="menu_approval_requests"
+              name="Requests"
+              parent="menu_approval_root"
+              action="action_approval_request"
+              sequence="20"
+              groups="group_approval_user"/>
+
+    <!-- ===== Configuration submenu ===== -->
+    <menuitem id="menu_approval_configuration"
+              name="Configuration"
+              parent="menu_approval_root"
+              sequence="90"
+              groups="group_approval_manager"/>
+
+    <!-- ===== Configuration > Rules ===== -->
+    <menuitem id="menu_approval_rules"
+              name="Rules"
+              parent="menu_approval_configuration"
+              action="action_approval_rule"
+              sequence="10"
+              groups="group_approval_manager"/>
+
+</odoo>

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================================================================
+         Module Category
+    ================================================================ -->
+    <record id="module_category_approvals" model="ir.module.category">
+        <field name="name">Approvals</field>
+        <field name="description">Manage approval workflows and rules.</field>
+        <field name="sequence">20</field>
+    </record>
+
+    <!-- Odoo 19: groups are grouped under a res.groups.privilege -->
+    <record id="privilege_approvals" model="res.groups.privilege">
+        <field name="name">Approvals</field>
+        <field name="category_id" ref="module_category_approvals"/>
+        <field name="sequence">20</field>
+    </record>
+
+    <!-- ================================================================
+         Security Groups
+    ================================================================ -->
+
+    <!-- group_approval_user: sees own requests, reads rules -->
+    <record id="group_approval_user" model="res.groups">
+        <field name="name">User</field>
+        <field name="privilege_id" ref="privilege_approvals"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+        <field name="comment">Can create and read their own approval requests. Read-only access to approval rules.</field>
+    </record>
+
+    <!-- group_approval_approver: can act on lines assigned to them -->
+    <record id="group_approval_approver" model="res.groups">
+        <field name="name">Approver</field>
+        <field name="privilege_id" ref="privilege_approvals"/>
+        <field name="implied_ids" eval="[(4, ref('group_approval_user'))]"/>
+        <field name="comment">Can approve or reject approval request lines assigned to them.</field>
+    </record>
+
+    <!-- group_approval_manager: full CRUD on rules & requests -->
+    <record id="group_approval_manager" model="res.groups">
+        <field name="name">Manager</field>
+        <field name="privilege_id" ref="privilege_approvals"/>
+        <field name="implied_ids" eval="[(4, ref('group_approval_approver'))]"/>
+        <field name="comment">Full access to approval rules and all requests across the company.</field>
+    </record>
+
+    <!-- ================================================================
+         Record Rules — approval.request
+    ================================================================ -->
+
+    <!-- Regular users: read/write own requests (requested_by OR approver on a line) -->
+    <record id="rule_approval_request_user" model="ir.rule">
+        <field name="name">Approval Request: User sees own requests</field>
+        <field name="model_id" ref="odoo_approval_engine.model_approval_request"/>
+        <field name="domain_force">
+            ['|',
+                ('requested_by', '=', user.id),
+                ('line_ids.approver_id', '=', user.id)
+            ]
+        </field>
+        <field name="groups" eval="[(4, ref('group_approval_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- Managers: see all requests, company-scoped -->
+    <record id="rule_approval_request_manager" model="ir.rule">
+        <field name="name">Approval Request: Manager sees all (company-scoped)</field>
+        <field name="model_id" ref="odoo_approval_engine.model_approval_request"/>
+        <field name="domain_force">
+            ['|',
+                ('company_id', '=', False),
+                ('company_id', 'in', company_ids)
+            ]
+        </field>
+        <field name="groups" eval="[(4, ref('group_approval_manager'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- ================================================================
+         Record Rules — approval.request.line
+    ================================================================ -->
+
+    <!-- Regular users: see lines belonging to requests they can access -->
+    <record id="rule_approval_request_line_user" model="ir.rule">
+        <field name="name">Approval Request Line: User sees own lines</field>
+        <field name="model_id" ref="odoo_approval_engine.model_approval_request_line"/>
+        <field name="domain_force">
+            ['|',
+                ('request_id.requested_by', '=', user.id),
+                ('approver_id', '=', user.id)
+            ]
+        </field>
+        <field name="groups" eval="[(4, ref('group_approval_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- Managers: see all lines, company-scoped -->
+    <record id="rule_approval_request_line_manager" model="ir.rule">
+        <field name="name">Approval Request Line: Manager sees all (company-scoped)</field>
+        <field name="model_id" ref="odoo_approval_engine.model_approval_request_line"/>
+        <field name="domain_force">
+            ['|',
+                ('request_id.company_id', '=', False),
+                ('request_id.company_id', 'in', company_ids)
+            ]
+        </field>
+        <field name="groups" eval="[(4, ref('group_approval_manager'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+</odoo>

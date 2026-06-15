@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===== approval.rule — List View ===== -->
+    <record id="approval_rule_list_view" model="ir.ui.view">
+        <field name="name">approval.rule.list</field>
+        <field name="model">approval.rule</field>
+        <field name="arch" type="xml">
+            <list string="Approval Rules">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="model_id"/>
+                <field name="trigger_event"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ===== approval.rule — Form View ===== -->
+    <record id="approval_rule_form_view" model="ir.ui.view">
+        <field name="name">approval.rule.form</field>
+        <field name="model">approval.rule</field>
+        <field name="arch" type="xml">
+            <form string="Approval Rule">
+                <sheet>
+                    <div class="oe_button_box" name="button_box"/>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger"
+                            invisible="active"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. Sales Manager Approval"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Rule Configuration">
+                            <field name="model_id" options="{'no_create': True}"/>
+                            <field name="trigger_event"/>
+                            <field name="sequence"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="active" widget="boolean_toggle"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Approval Levels" name="levels">
+                            <field name="level_ids">
+                                <list editable="bottom" string="Approval Levels">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name" placeholder="e.g. Manager"/>
+                                    <field name="approver_type"/>
+                                    <field name="approver_group_id"
+                                           invisible="approver_type != 'group'"
+                                           required="approver_type == 'group'"/>
+                                    <field name="approver_expression"
+                                           invisible="approver_type != 'expression'"
+                                           required="approver_type == 'expression'"/>
+                                    <field name="min_approvals"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Conditions" name="conditions">
+                            <group>
+                                <field name="condition_domain" widget="domain"
+                                       options="{'model': 'model_name'}"
+                                       placeholder="Leave empty to match all records"/>
+                            </group>
+                            <group string="Python Condition (advanced)">
+                                <field name="condition_python" widget="ace"
+                                       options="{'mode': 'python'}"
+                                       placeholder="# Return True/False&#10;# Context: record, user, datetime, relativedelta&#10;result = record.amount_total &gt; 10000"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ===== approval.rule — Action ===== -->
+    <record id="action_approval_rule" model="ir.actions.act_window">
+        <field name="name">Approval Rules</field>
+        <field name="res_model">approval.rule</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'active_test': False}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first approval rule
+            </p>
+            <p>
+                Configure rules to automatically trigger approval workflows
+                when records are created, modified, or confirmed.
+            </p>
+        </field>
+    </record>
+
+</odoo>

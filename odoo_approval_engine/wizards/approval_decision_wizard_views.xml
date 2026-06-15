@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===== approval.decision.wizard — Form View ===== -->
+    <record id="approval_decision_wizard_form_view" model="ir.ui.view">
+        <field name="name">approval.decision.wizard.form</field>
+        <field name="model">approval.decision.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Record Decision">
+                <group>
+                    <group string="Request">
+                        <field name="request_id" readonly="1"/>
+                        <field name="line_id" readonly="1"/>
+                    </group>
+                </group>
+                <group string="Your Decision">
+                    <field name="comment"
+                           placeholder="Optional comment or reason for your decision…"
+                           nolabel="1"/>
+                </group>
+                <footer>
+                    <button name="action_approve"
+                            string="Approve"
+                            type="object"
+                            class="btn-success"/>
+                    <button name="action_reject"
+                            string="Reject"
+                            type="object"
+                            class="btn-danger"/>
+                    <button string="Cancel"
+                            class="btn-secondary"
+                            special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- ===== approval.decision.wizard — Dialog Action ===== -->
+    <record id="action_approval_decision_wizard" model="ir.actions.act_window">
+        <field name="name">Record Decision</field>
+        <field name="res_model">approval.decision.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="approval_decision_wizard_form_view"/>
+        <field name="target">new</field>
+    </record>
+
+</odoo>
