@@ -7,7 +7,7 @@
               name="Approval Engine"
               web_icon="odoo_approval_engine,static/description/icon.png"
               sequence="50"
-              groups="group_approval_user"/>
+              groups="base.group_user"/>
 
     <!-- ===== My Approvals (inbox) ===== -->
     <menuitem id="menu_approval_inbox"
@@ -15,7 +15,7 @@
               parent="menu_approval_root"
               action="action_approval_inbox"
               sequence="10"
-              groups="group_approval_user"/>
+              groups="base.group_user"/>
 
     <!-- ===== All Requests ===== -->
     <menuitem id="menu_approval_requests"
@@ -23,7 +23,7 @@
               parent="menu_approval_root"
               action="action_approval_request"
               sequence="20"
-              groups="group_approval_user"/>
+              groups="base.group_user"/>
 
     <!-- ===== Configuration submenu ===== -->
     <menuitem id="menu_approval_configuration"

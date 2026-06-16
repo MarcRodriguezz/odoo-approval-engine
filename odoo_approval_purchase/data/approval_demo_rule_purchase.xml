@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!--
+        Demo 2-step approval rule for purchases:
+        any purchase order over 1,000 needs Step 1 (a Buyer) then
+        Step 2 (a Purchase Manager) before it can be confirmed.
+    -->
+    <record id="approval_rule_purchase_high_value" model="approval.engine.rule">
+        <field name="name">Purchase Order — Needs 2-step approval (&gt; 1,000)</field>
+        <field name="active" eval="True"/>
+        <field name="sequence">10</field>
+        <field name="model_id" ref="purchase.model_purchase_order"/>
+        <field name="trigger_event">on_confirm</field>
+        <field name="condition_python">record.amount_total &gt; 1000</field>
+        <field name="level_ids" eval="[
+            (0, 0, {
+                'sequence': 1,
+                'name': 'Buyer review',
+                'approver_type': 'group',
+                'approver_group_id': ref('purchase.group_purchase_user'),
+                'min_approvals': 1,
+            }),
+            (0, 0, {
+                'sequence': 2,
+                'name': 'Purchase Manager',
+                'approver_type': 'group',
+                'approver_group_id': ref('purchase.group_purchase_manager'),
+                'min_approvals': 1,
+            })
+        ]"/>
+    </record>
+</odoo>

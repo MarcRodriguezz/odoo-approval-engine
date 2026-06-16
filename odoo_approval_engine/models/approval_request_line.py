@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api, _
+from odoo.exceptions import UserError
 
 
 class ApprovalRequestLine(models.Model):
@@ -45,10 +46,25 @@ class ApprovalRequestLine(models.Model):
             line.source_document = record.sudo().display_name if record else ""
 
     # --- One-click inbox actions -------------------------------------------
+    def _check_can_decide(self):
+        """Only the assigned approver (or an Approvals Manager) may decide."""
+        self.ensure_one()
+        is_manager = self.env.user.has_group(
+            "odoo_approval_engine.group_approval_manager"
+        )
+        if self.env.user != self.approver_id and not is_manager:
+            raise UserError(
+                _("Only the assigned approver can decide on this step.")
+            )
+
     def action_quick_approve(self):
         """Approve this step in one click (no comment)."""
         self.ensure_one()
-        self.request_id._register_decision(self, "approved", False)
+        self._check_can_decide()
+        # sudo: the approval is the authorization; advancing the workflow
+        # generates lines for the next step's approvers, which a plain user
+        # could not create under their own rights.
+        self.request_id.sudo()._register_decision(self.sudo(), "approved", False)
         return {
             "type": "ir.actions.client",
             "tag": "display_notification",

@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e-20260528\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-15 13:18+0000\n"
-"PO-Revision-Date: 2026-06-15 13:18+0000\n"
+"POT-Creation-Date: 2026-06-16 09:51+0000\n"
+"PO-Revision-Date: 2026-06-16 09:51+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -230,6 +230,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__approval_engine_mixin__approval_state__approved
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__approval_engine_request__state__approved
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__approval_engine_request_line__decision__approved
+#: model:ir.model.fields.selection,name:odoo_approval_engine.selection__purchase_order__approval_state__approved
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__sale_order__approval_state__approved
 msgid "Approved"
 msgstr ""
@@ -612,6 +613,7 @@ msgstr ""
 
 #. module: odoo_approval_engine
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__approval_engine_mixin__approval_state__none
+#: model:ir.model.fields.selection,name:odoo_approval_engine.selection__purchase_order__approval_state__none
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__sale_order__approval_state__none
 msgid "No Approval"
 msgstr ""
@@ -685,6 +687,12 @@ msgid "Only draft requests can be submitted (request %s is '%s')."
 msgstr ""
 
 #. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_request_line.py:0
+msgid "Only the assigned approver can decide on this step."
+msgstr ""
+
+#. module: odoo_approval_engine
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_inbox_form_view
 msgid "Open document"
 msgstr ""
@@ -704,6 +712,7 @@ msgstr ""
 #. module: odoo_approval_engine
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__approval_engine_mixin__approval_state__pending
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__approval_engine_request__state__pending
+#: model:ir.model.fields.selection,name:odoo_approval_engine.selection__purchase_order__approval_state__pending
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__sale_order__approval_state__pending
 msgid "Pending Approval"
 msgstr ""
@@ -746,6 +755,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__approval_engine_mixin__approval_state__rejected
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__approval_engine_request__state__rejected
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__approval_engine_request_line__decision__rejected
+#: model:ir.model.fields.selection,name:odoo_approval_engine.selection__purchase_order__approval_state__rejected
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__sale_order__approval_state__rejected
 msgid "Rejected"
 msgstr ""

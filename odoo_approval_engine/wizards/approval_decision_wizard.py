@@ -50,7 +50,11 @@ class ApprovalDecisionWizard(models.TransientModel):
         self.ensure_one()
         if not self.line_id:
             raise UserError(_("No approval step selected."))
-        self.request_id._register_decision(self.line_id, "approved", self.comment)
+        self.line_id._check_can_decide()
+        # sudo: see approval.engine.request.line.action_quick_approve.
+        self.request_id.sudo()._register_decision(
+            self.line_id.sudo(), "approved", self.comment
+        )
         return {"type": "ir.actions.act_window_close"}
 
     def action_reject(self):
@@ -58,9 +62,12 @@ class ApprovalDecisionWizard(models.TransientModel):
         self.ensure_one()
         if not self.line_id:
             raise UserError(_("No approval step selected."))
+        self.line_id._check_can_decide()
         if not (self.comment and self.comment.strip()):
             raise UserError(_("Please provide a reason for rejecting this request."))
-        self.request_id._register_decision(self.line_id, "rejected", self.comment)
+        self.request_id.sudo()._register_decision(
+            self.line_id.sudo(), "rejected", self.comment
+        )
         return {"type": "ir.actions.act_window_close"}
 
 

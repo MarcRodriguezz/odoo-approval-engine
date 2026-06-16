@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Form: approval state badge next to the status bar -->
+    <record id="view_purchase_order_form_approval_state" model="ir.ui.view">
+        <field name="name">purchase.order.form.approval.state</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header/field[@name='state']" position="before">
+                <field name="approval_state" widget="badge"
+                       decoration-warning="approval_state == 'pending'"
+                       decoration-success="approval_state == 'approved'"
+                       decoration-danger="approval_state == 'rejected'"
+                       decoration-muted="approval_state == 'none'"
+                       string="Approval"
+                       invisible="approval_state == 'none'"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Purchase Orders list: approval column -->
+    <record id="view_purchase_order_tree_approval_state" model="ir.ui.view">
+        <field name="name">purchase.order.list.approval.state</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <field name="approval_state" widget="badge"
+                       decoration-warning="approval_state == 'pending'"
+                       decoration-success="approval_state == 'approved'"
+                       decoration-danger="approval_state == 'rejected'"
+                       decoration-muted="approval_state == 'none'"
+                       string="Approval" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

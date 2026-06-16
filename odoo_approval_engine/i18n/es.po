@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e-20260528\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-15 13:18+0000\n"
-"PO-Revision-Date: 2026-06-15 13:18+0000\n"
+"POT-Creation-Date: 2026-06-16 09:51+0000\n"
+"PO-Revision-Date: 2026-06-16 09:51+0000\n"
 "Last-Translator: \n"
 "Language: es\n"
 "Language-Team: \n"
@@ -22,7 +22,7 @@ msgid ""
 "# Return True/False\n"
 "# Context: record, user, datetime, relativedelta\n"
 "result = record.amount_total > 10000"
-msgstr "# Devuelve True/False\n# Contexto: record, user, datetime, relativedelta\nresult = record.amount_total > 10000"
+msgstr ""
 
 #. module: odoo_approval_engine
 #. odoo-python
@@ -231,6 +231,7 @@ msgstr "Aprobar"
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__approval_engine_mixin__approval_state__approved
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__approval_engine_request__state__approved
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__approval_engine_request_line__decision__approved
+#: model:ir.model.fields.selection,name:odoo_approval_engine.selection__purchase_order__approval_state__approved
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__sale_order__approval_state__approved
 msgid "Approved"
 msgstr "Aprobado"
@@ -613,6 +614,7 @@ msgstr "Tipo de la siguiente actividad"
 
 #. module: odoo_approval_engine
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__approval_engine_mixin__approval_state__none
+#: model:ir.model.fields.selection,name:odoo_approval_engine.selection__purchase_order__approval_state__none
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__sale_order__approval_state__none
 msgid "No Approval"
 msgstr "Sin aprobación"
@@ -686,6 +688,12 @@ msgid "Only draft requests can be submitted (request %s is '%s')."
 msgstr "Solo se pueden enviar solicitudes en borrador (la solicitud %s está '%s')."
 
 #. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_request_line.py:0
+msgid "Only the assigned approver can decide on this step."
+msgstr "Solo el aprobador asignado puede decidir sobre este paso."
+
+#. module: odoo_approval_engine
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_inbox_form_view
 msgid "Open document"
 msgstr "Abrir documento"
@@ -705,6 +713,7 @@ msgstr "Pendiente"
 #. module: odoo_approval_engine
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__approval_engine_mixin__approval_state__pending
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__approval_engine_request__state__pending
+#: model:ir.model.fields.selection,name:odoo_approval_engine.selection__purchase_order__approval_state__pending
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__sale_order__approval_state__pending
 msgid "Pending Approval"
 msgstr "Pendiente de aprobación"
@@ -747,6 +756,7 @@ msgstr "Rechazar"
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__approval_engine_mixin__approval_state__rejected
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__approval_engine_request__state__rejected
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__approval_engine_request_line__decision__rejected
+#: model:ir.model.fields.selection,name:odoo_approval_engine.selection__purchase_order__approval_state__rejected
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__sale_order__approval_state__rejected
 msgid "Rejected"
 msgstr "Rechazado"

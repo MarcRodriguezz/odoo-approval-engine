@@ -58,7 +58,7 @@
                 ('line_ids.approver_id', '=', user.id)
             ]
         </field>
-        <field name="groups" eval="[(4, ref('group_approval_user'))]"/>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="True"/>
         <field name="perm_create" eval="True"/>
@@ -96,7 +96,7 @@
                 ('approver_id', '=', user.id)
             ]
         </field>
-        <field name="groups" eval="[(4, ref('group_approval_user'))]"/>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="True"/>
         <field name="perm_create" eval="True"/>
