@@ -104,7 +104,7 @@
         <field name="name">My Approvals</field>
         <field name="res_model">approval.engine.request.line</field>
         <field name="view_mode">kanban,list,form</field>
-        <field name="domain">[('approver_id', '=', uid), ('decision', '=', 'pending')]</field>
+        <field name="domain">[('approver_id', '=', uid), ('decision', '=', 'pending'), ('request_state', '=', 'pending')]</field>
         <field name="view_ids"
                eval="[(5, 0, 0),
                       (0, 0, {'view_mode': 'kanban', 'view_id': ref('approval_inbox_kanban_view')}),

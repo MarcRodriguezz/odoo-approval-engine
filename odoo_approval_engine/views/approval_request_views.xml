@@ -46,8 +46,7 @@
                             invisible="state == 'cancelled'"
                             confirm="Are you sure you want to cancel this approval request?"/>
                     <field name="state" widget="statusbar"
-                           statusbar_visible="draft,pending,approved,rejected"
-                           options="{'clickable': true}"/>
+                           statusbar_visible="draft,pending,approved,rejected"/>
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">

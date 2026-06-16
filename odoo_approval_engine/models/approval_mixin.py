@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
-
-from odoo import models, fields, api, _
-from odoo.tools.safe_eval import safe_eval
+from odoo import models, fields, _
 
 
 class ApprovalEngineMixin(models.AbstractModel):
-    """Inherit this mixin in any model that should be governed by the
-    approval engine.
-    integration modules override the hooks at the bottom.
+    """Optional mixin for models that want to *block* a business action
+    (e.g. confirmation) until approved, and expose approval_state in their UI.
+
+    NOTE: the matching engine itself is generic and also runs on ANY model for
+    on_create / on_write rules via the global ``base`` hook (see base_approval.py)
+    — inheriting this mixin is only required to (a) gate a custom action and
+    (b) show the approval state on the record's own views.
     """
 
     _name = "approval.engine.mixin"
@@ -32,10 +32,8 @@ class ApprovalEngineMixin(models.AbstractModel):
     )
 
     def _compute_approval_requests(self):
-        # sudo: this is a display-only computed field on the governed record,
-        # so any user who can see that record (e.g. a salesperson on a sale
-        # order) can compute it without needing approval-engine groups. The
-        # approval.engine.request views still enforce their own access rules.
+        # sudo: display-only field; any user who can see the record can compute
+        # it. The approval.engine.request views still enforce their own rules.
         Request = self.env["approval.engine.request"].sudo()
         for record in self:
             requests = Request.search(
@@ -53,140 +51,22 @@ class ApprovalEngineMixin(models.AbstractModel):
             else:
                 record.approval_state = "none"
 
-    # --- Engine entry points -----------------------------------------------
-
+    # --- Engine entry points (delegate to the shared engine) ----------------
     def _evaluate_approval_rules(self, trigger_event):
-        """Evaluate matching rules for this record and trigger_event.
-
-        Returns True if the business action must be blocked (a rule matched
-        and either an existing open request was found or a new one was
-        created).  Returns False when no rule matched.
-        """
+        """Return True if the business action must be blocked pending approval."""
         self.ensure_one()
-        # sudo: the triggering user (e.g. a salesperson confirming an order) is
-        # not necessarily an approval-engine user, but the engine must still be
-        # able to read rules and open requests on their behalf.
-        rules = self.env["approval.engine.rule"].sudo().search(
-            [
-                ("model_name", "=", self._name),
-                ("trigger_event", "=", trigger_event),
-                ("active", "=", True),
-            ],
-            order="sequence, id",
+        return self.env["approval.engine.request"]._evaluate_rules_for(
+            self, trigger_event
         )
-
-        ctx = {
-            "record": self,
-            "user": self.env.user,
-            "datetime": datetime,
-            "relativedelta": relativedelta,
-        }
-
-        for rule in rules:
-            # 1. Domain check
-            if not self._approval_match_domain(rule):
-                continue
-
-            # 2. Python condition check
-            if rule.condition_python:
-                try:
-                    result = safe_eval(rule.condition_python, ctx)
-                except Exception:
-                    result = False
-                if not result:
-                    continue
-
-            # 3. Duplicate open-request guard
-            existing = self.env["approval.engine.request"].sudo().search(
-                [
-                    ("res_model", "=", self._name),
-                    ("res_id", "=", self.id),
-                    ("rule_id", "=", rule.id),
-                    ("state", "=", "pending"),
-                ],
-                limit=1,
-            )
-            if existing:
-                return True
-
-            # 4. Create request and block the action
-            self._approval_create_request(rule)
-            return True
-
-        return False
 
     def _approval_match_domain(self, rule):
-        """Return True if this record matches *rule*'s condition_domain.
-
-        An empty domain always matches.  Otherwise the stored domain string
-        is parsed with safe_eval and evaluated via search_count so that
-        Odoo's ORM access rules are respected.
-        """
-        if not rule.condition_domain or rule.condition_domain.strip() in ("", "[]"):
-            return True
-
-        try:
-            domain = safe_eval(rule.condition_domain)
-        except Exception:
-            # Unparseable domain — treat as non-matching (safe default)
-            return False
-
-        if not isinstance(domain, list):
-            return False
-
-        full_domain = [("id", "=", self.id)] + domain
-        return self.search_count(full_domain) > 0
+        """Kept for backward compatibility; delegates to the rule."""
+        return rule._match_record(self)
 
     def _approval_create_request(self, rule):
-        """Create an ``approval.engine.request`` in state *pending* for this record
-        under *rule*, generate level-1 lines, and notify approvers.
+        return self.env["approval.engine.request"]._create_request_for(self, rule)
 
-        Returns the newly created ``approval.engine.request``.
-        """
-        # sudo: created on behalf of the triggering user (who may lack approval
-        # rights); requested_by still records the real user.
-        request = self.env["approval.engine.request"].sudo().create(
-            {
-                "rule_id": rule.id,
-                "res_model": self._name,
-                "res_id": self.id,
-                "state": "pending",
-                "current_level": 1,
-                "requested_by": self.env.user.id,
-            }
-        )
-
-        # Resolve and create lines for level 1
-        level_1 = rule.level_ids.filtered(lambda l: l.sequence == 1)
-        if level_1:
-            level_1 = level_1[0]
-            request._generate_lines_for_level(level_1)
-
-        # Chatter message on the request
-        request.message_post(
-            body=_(
-                "Approval request created for %s (rule: %s)."
-            ) % (self.display_name, rule.name),
-            subtype_xmlid="mail.mt_note",
-        )
-
-        # Notify approvers via activity / message
-        approvers = request.line_ids.filtered(
-            lambda l: l.level == 1
-        ).mapped("approver_id")
-
-        if approvers:
-            request.message_post(
-                body=_(
-                    "Please review and approve the request: %s"
-                ) % request.name,
-                partner_ids=approvers.mapped("partner_id").ids,
-                subtype_xmlid="mail.mt_comment",
-            )
-
-        return request
-
-    # --- Source-record hooks (overridden by integration modules) --------
+    # --- Source-record hooks (overridden by integration modules) ------------
     def _on_approval_approved(self):
         """Called by the engine when a request is fully approved."""
         return True
@@ -196,8 +76,7 @@ class ApprovalEngineMixin(models.AbstractModel):
         return True
 
     def _approval_block_action(self):
-        """Return an action/notification informing the user that the
-        operation is pending approval."""
+        """Return a notification telling the user the operation is pending."""
         return {
             "type": "ir.actions.client",
             "tag": "display_notification",

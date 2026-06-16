@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError
+from odoo.tools import ormcache
 from odoo.tools.safe_eval import safe_eval
 
 
@@ -15,7 +16,29 @@ class ApprovalRule(models.Model):
         # @api.constrains on level_ids does not fire when the field is absent
         # from create vals, so enforce the "at least one level" rule here too.
         rules._check_levels()
+        self.env.registry.clear_cache()
         return rules
+
+    def write(self, vals):
+        res = super().write(vals)
+        # Rules changed -> the cache of "which models have rules" is stale.
+        self.env.registry.clear_cache()
+        return res
+
+    def unlink(self):
+        res = super().unlink()
+        self.env.registry.clear_cache()
+        return res
+
+    @api.model
+    @ormcache("trigger_event")
+    def _models_with_rules(self, trigger_event):
+        """Cached set of model names that have at least one active rule for the
+        given trigger_event. Lets the global base hook skip cheaply."""
+        rules = self.sudo().search(
+            [("trigger_event", "=", trigger_event), ("active", "=", True)]
+        )
+        return tuple(set(rules.mapped("model_name")))
 
     name = fields.Char(required=True)
     active = fields.Boolean(default=True)
@@ -71,6 +94,26 @@ class ApprovalRule(models.Model):
                 )
 
     # --- Engine hooks -------------------------------------------------------
+
+    def _match_record(self, record):
+        """Return True if *record* matches this rule's condition_domain.
+
+        Empty domain always matches; otherwise the stored domain is parsed
+        with safe_eval and checked via search_count (ORM rules respected).
+        """
+        self.ensure_one()
+        domain_str = self.condition_domain
+        if not domain_str or domain_str.strip() in ("", "[]"):
+            return True
+        try:
+            domain = safe_eval(domain_str)
+        except Exception:
+            return False
+        if not isinstance(domain, list):
+            return False
+        return record.sudo().search_count(
+            [("id", "=", record.id)] + domain
+        ) > 0
 
     def _approval_resolve_approvers(self, level, record=None):
         """Return a ``res.users`` recordset for the given ``approval.engine.rule.level``.

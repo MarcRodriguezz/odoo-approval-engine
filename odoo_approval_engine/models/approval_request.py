@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
+from odoo.tools.safe_eval import safe_eval
 
 
 class ApprovalRequest(models.Model):
@@ -65,6 +69,87 @@ class ApprovalRequest(models.Model):
                     "approval.engine.request"
                 ) or "/"
         return super().create(vals_list)
+
+    # --- Shared engine (used by the mixin AND the generic base hook) --------
+
+    @api.model
+    def _evaluate_rules_for(self, record, trigger_event):
+        """Evaluate active rules for *record* and *trigger_event*.
+
+        Generic: works for ANY model. Returns True if a matching rule fired
+        (an open request already existed or a new one was created).
+        """
+        record.ensure_one()
+        Rule = self.env["approval.engine.rule"].sudo()
+        rules = Rule.search(
+            [
+                ("model_name", "=", record._name),
+                ("trigger_event", "=", trigger_event),
+                ("active", "=", True),
+            ],
+            order="sequence, id",
+        )
+        ctx = {
+            "record": record,
+            "user": self.env.user,
+            "datetime": datetime,
+            "relativedelta": relativedelta,
+        }
+        for rule in rules:
+            if not rule._match_record(record):
+                continue
+            if rule.condition_python:
+                try:
+                    matched = bool(safe_eval(rule.condition_python, dict(ctx)))
+                except Exception:
+                    matched = False
+                if not matched:
+                    continue
+            existing = self.sudo().search(
+                [
+                    ("res_model", "=", record._name),
+                    ("res_id", "=", record.id),
+                    ("rule_id", "=", rule.id),
+                    ("state", "=", "pending"),
+                ],
+                limit=1,
+            )
+            if existing:
+                return True
+            self.sudo()._create_request_for(record, rule)
+            return True
+        return False
+
+    @api.model
+    def _create_request_for(self, record, rule):
+        """Create a pending request for *record* under *rule*, generate the
+        first step's lines and notify approvers. Returns the request."""
+        request = self.sudo().create({
+            "rule_id": rule.id,
+            "res_model": record._name,
+            "res_id": record.id,
+            "state": "pending",
+            "current_level": 1,
+            "requested_by": self.env.user.id,
+        })
+        level_1 = rule.level_ids.filtered(lambda l: l.sequence == 1)
+        if level_1:
+            request._generate_lines_for_level(level_1[0])
+        request.message_post(
+            body=_("Approval request created for %s (rule: %s).")
+            % (record.display_name, rule.name),
+            subtype_xmlid="mail.mt_note",
+        )
+        approvers = request.line_ids.filtered(lambda l: l.level == 1).mapped(
+            "approver_id"
+        )
+        if approvers:
+            request.message_post(
+                body=_("Please review and approve the request: %s") % request.name,
+                partner_ids=approvers.mapped("partner_id").ids,
+                subtype_xmlid="mail.mt_comment",
+            )
+        return request
 
     # --- Private helpers ----------------------------------------------------
 

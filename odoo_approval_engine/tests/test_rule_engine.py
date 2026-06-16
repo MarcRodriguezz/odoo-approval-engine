@@ -98,6 +98,27 @@ class TestRuleEngine(TransactionCase):
         )
         self.assertEqual(approvers, admin)
 
+    # --- generic base hook (works on ANY model, no integration) ------------
+
+    def test_generic_on_create_any_model(self):
+        """An on_create rule on res.partner (no integration) still fires via
+        the global base hook and creates a pending request."""
+        self.env["approval.engine.rule"].create({
+            "name": "Partner review",
+            "model_id": self.model_partner.id,
+            "trigger_event": "on_create",
+            "level_ids": [(0, 0, {
+                "sequence": 1, "name": "L1",
+                "approver_type": "group", "approver_group_id": self.group.id,
+            })],
+        })
+        partner = self.env["res.partner"].create({"name": "Generic Hook Partner"})
+        req = self.env["approval.engine.request"].search([
+            ("res_model", "=", "res.partner"), ("res_id", "=", partner.id),
+        ])
+        self.assertTrue(req, "on_create rule must fire on any model via base hook")
+        self.assertEqual(req.state, "pending")
+
     def test_resolve_approvers_expression_bad_return(self):
         rule = self._make_rule()
         rule.level_ids[0].write({
