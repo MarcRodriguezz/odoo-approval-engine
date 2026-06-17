@@ -174,3 +174,83 @@ Matrix for the 4 models × 3 groups. Rules are read-only for non-managers.
 | Integration | sale.order confirm blocked until approved; approval triggers real confirm |
 
 All tests use `TransactionCase`, tagged `@tagged("approval")`, runnable with Odoo's `--test-tags approval` option.
+
+---
+
+# Phase 2 additions (v19.0.2.0.0)
+
+## A. Approvable Actions (`approval.engine.trigger`)
+
+A rule now states *which action* it gates, per document.
+
+- `approval.engine.trigger`: `name`, `code`, `model_id` (empty = universal), `active`.
+- Universal triggers shipped by the core: **On creation** (`on_create`), **On modification**
+  (`on_write`). Integrations ship model-specific ones (e.g. *Sale Order: Confirmation* →
+  `on_confirm` / `sale.order`).
+- `approval.engine.rule.trigger_id` is the user-facing selector, filtered in the form to
+  `['|', ('model_id','=',False), ('model_id','=',model_id)]`. It syncs the technical matching key
+  `trigger_event` (Char) on create/write. The engine still matches on `trigger_event`.
+- The rule's **Document** selector is limited to integrated models via the computed
+  `allowed_model_ids` (= models that have a model-specific trigger).
+
+## B. Generic engine on any model (`models/base_approval.py`)
+
+`base` is extended with `create` / `write` overrides that route records through the engine when a
+matching `on_create` / `on_write` rule exists:
+
+```
+base.create()/write()  ->  _approval_engine_trigger(event)
+  skip if: not registry.ready, engine's own models, approval_bypass ctx
+  skip O(1) if model not in approval.engine.rule._models_with_rules(event)  # ormcache
+  else: approval.engine.request._evaluate_rules_for(record, event)
+```
+
+The ormcache is cleared on any rule create/write/unlink. Matching always re-queries real rules, so
+a stale cache only ever causes a redundant lookup — never a wrong request. This makes
+`on_create` / `on_write` rules work on **any** model with no per-model code.
+
+Matching + request creation live on `approval.engine.request` (`_evaluate_rules_for`,
+`_create_request_for`); `approval.engine.mixin` delegates to them. Domain matching is
+`approval.engine.rule._match_record`.
+
+## C. Action-blocking integrations
+
+To hold a *specific* business action (which differs per model), a model inherits the mixin and
+overrides that method with the bypass-flag pattern:
+
+| Module | Model | Gated method | Trigger code |
+|--------|-------|--------------|--------------|
+| `odoo_approval_sale` | `sale.order` | `action_confirm` | `on_confirm` |
+| `odoo_approval_purchase` | `purchase.order` | `button_confirm` | `on_confirm` |
+| `odoo_approval_account` | `account.move` | `action_post` | `on_post` |
+| `odoo_approval_expense` | `hr.expense` | `action_submit` | `on_submit` |
+
+```python
+def action_confirm(self):
+    if self.env.context.get("approval_bypass"):
+        return super().action_confirm()
+    if any(o._evaluate_approval_rules("on_confirm") for o in self):
+        return self._approval_block_action()
+    return super().action_confirm()
+
+def _on_approval_approved(self):
+    return self.with_context(approval_bypass=True).action_confirm()
+```
+
+## D. Security model (any internal user can approve)
+
+- ACL: `base.group_user` gets read on rule/trigger/request/line (+ wizard RWC); managers full.
+- Record rules (on `base.group_user`) scope rows to requester-or-approver; managers see all.
+- Decisions (`action_quick_approve`, wizard) verify `env.user == line.approver_id` (or manager),
+  then run `request.sudo()._register_decision(...)` — so advancing the workflow (which creates the
+  next stage's lines) doesn't require the approver to own the engine's models.
+- The source action runs via `record.sudo()._on_approval_approved()` (the approval is the
+  authorization).
+
+## E. UX & naming
+
+- Mixin fields are namespaced: `approval_engine_state`, `approval_engine_request_ids`.
+- Users see **stages** (the `approval.engine.request.line.stage_label` = the stage's name,
+  else "Approval N") rather than raw "levels/steps".
+- "My Approvals" is a kanban board (one-click approve; reject requires a reason). Requests can be
+  reopened from any final state.

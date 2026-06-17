@@ -1,12 +1,11 @@
 # Approval & Rules Engine for Odoo
 
-Stop chasing approvals over email and WhatsApp. This module lets you define **approval rules**
-once, and Odoo automatically stops the right operations until the right people say "yes" — with a
-full history of who approved what, when, and why.
+Stop chasing approvals over email and WhatsApp. Define **approval rules** once, and Odoo
+automatically holds the right actions until the right people say "yes" — with a full history of
+who approved what, when, and why.
 
-> 💡 **Example:** "Any sales order above €10,000 must be approved by a Sales Manager before it
-> can be confirmed." You set that rule once. From then on, every big order is held and routed
-> automatically.
+> 💡 **Example:** "Any sales order above €10,000 must be confirmed by a Sales Manager first."
+> You set that rule once; from then on every big order is held and routed automatically.
 
 ---
 
@@ -14,22 +13,25 @@ full history of who approved what, when, and why.
 
 1. [The idea in 30 seconds](#the-idea-in-30-seconds)
 2. [Key concepts](#key-concepts)
-3. [Tutorial: your first approval rule](#tutorial-your-first-approval-rule)
-4. [Approving and rejecting (the Inbox)](#approving-and-rejecting-the-inbox)
-5. [Following the history](#following-the-history)
-6. [Multi-level approvals](#multi-level-approvals)
-7. [Tips & FAQ](#tips--faq)
-8. [For developers](#for-developers)
+3. [Which documents are supported](#which-documents-are-supported)
+4. [Tutorial: your first approval rule](#tutorial-your-first-approval-rule)
+5. [Approving and rejecting (My Approvals)](#approving-and-rejecting-my-approvals)
+6. [Following the history](#following-the-history)
+7. [Multi-stage approvals](#multi-stage-approvals)
+8. [Tips & FAQ](#tips--faq)
+9. [For developers](#for-developers)
 
 ---
 
 ## The idea in 30 seconds
 
 - You write **rules** like *"if the amount is over X, ask for approval"*.
-- When someone tries to confirm a sales order (or any record), the engine checks the rules.
-- If a rule matches, the operation is **paused** and an **approval request** is created.
-- The chosen approvers get it in their **Inbox**, where they approve or reject with a comment.
-- Once approved, the operation continues automatically. Everything is logged.
+- You pick the **document** (sales order, invoice, …) and the exact **action** that needs
+  approval (confirm, post, …).
+- When someone triggers that action, the engine checks the rules. If one matches, the action is
+  **paused** and an **approval request** is created.
+- The chosen approvers get it in **My Approvals**, where they approve or reject with a comment.
+- Once every stage approves, the action runs automatically. Everything is logged.
 
 ---
 
@@ -37,138 +39,135 @@ full history of who approved what, when, and why.
 
 | Term | What it means |
 |------|---------------|
-| **Approval Rule** | The "if this, then ask for approval" condition you configure. |
-| **Approval Level** | A step in the rule. A rule can have several levels (e.g. Manager → Finance). Each level says *who* approves and *how many* approvals are needed. |
-| **Approval Request** | Created automatically when a rule fires on a record. It moves through *Draft → Pending → Approved / Rejected*. |
-| **Inbox** | Your personal list of requests waiting for **your** decision. |
+| **Approval Rule** | The "if this, then ask for approval" definition. |
+| **Approvable Action** | *What* on the document needs approval — e.g. *Sale Order: Confirmation*, *Invoice: Posting*. The rule shows only the actions valid for the chosen document. |
+| **Approval Stage** | One step of the rule — *who* approves (a group or a dynamic expression) and *how many* approvals are needed. Stages run in order. |
+| **Approval Request** | Created automatically when a rule fires. It moves through *Draft → Pending → Approved / Rejected*. |
+| **My Approvals** | Your personal board of requests waiting for **your** decision. |
+
+---
+
+## Which documents are supported
+
+Out of the box, these documents can be gated (the rule's *Document* selector only shows
+integrated documents):
+
+| Document | Action that can require approval |
+|----------|----------------------------------|
+| **Sales Order** | Confirmation |
+| **Purchase Order** | Confirmation |
+| **Invoice / Journal Entry** | Posting |
+| **Expense** | Submission |
+| **Any model** | *On creation* / *On modification* (generic, no integration needed) |
+
+Adding another document (e.g. a delivery) is a ~30-line integration — see
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ---
 
 ## Tutorial: your first approval rule
 
-We'll recreate the classic case: **big sales orders need a manager's approval.**
+We'll recreate the classic case: **big sales orders need a manager's confirmation.**
 
-### Step 1 — Open the Approvals app
+### 1 — Open the app
 
-After installing, a new top menu **Approvals** appears. Go to:
+A top menu **Approval Engine** appears after install. Go to
+**Approval Engine ▸ Configuration ▸ Rules** (needs the *Approvals / Manager* right).
 
-```
-Approvals ▸ Configuration ▸ Rules
-```
+### 2 — Describe when it applies
 
-(You need the *Approvals / Manager* access right to see Configuration.)
-
-### Step 2 — Create the rule
-
-Click **New** and fill in:
-
-| Field | Value | Why |
-|-------|-------|-----|
-| **Name** | `High-value sales orders` | Just a label. |
-| **Model** | `Sales Order` | Which document this watches. |
-| **Trigger** | `On Confirm` | Check the rule when the order is confirmed. |
-
-Then open the **Conditions** tab and set when the rule should fire. You can use either:
-
-- **Condition (Domain)** — a point-and-click filter, *or*
-- **Condition (Python)** — a one-line expression, e.g.:
-
-  ```python
-  record.amount_total > 10000
-  ```
-
-> Leave both empty and the rule matches **every** record of that model.
-
-### Step 3 — Decide who approves (Levels)
-
-In the **Approval Levels** tab, add one line:
+Click **New** and fill in *When does it apply?*:
 
 | Field | Value |
 |-------|-------|
-| **Level** | `1` |
-| **Approver** | `User Group` |
-| **Group** | `Sales / Manager` |
-| **Min. Approvals** | `1` |
+| **Name** | `High-value sales orders` |
+| **Document** | `Sales Order` (only integrated documents are listed) |
+| **Approvable Action** | `Sale Order: Confirmation` |
 
-Save. That's it — the rule is live.
+Then, in the **Conditions** tab, set when it should fire — a point-and-click **Domain** or a
+one-line **Python** expression such as `record.amount_total > 10000`. Leave both empty to match
+every record.
 
-### Step 4 — See it in action
+### 3 — Say who must approve
 
-Create a sales order over €10,000 and press **Confirm**. Instead of confirming, Odoo shows a
-notification: *"This operation requires approval and is now pending."* The order stays unconfirmed
-and a request is sent to the Sales Managers.
+In **Who must approve**, add one stage:
+
+| Field | Value |
+|-------|-------|
+| **Stage** | `Sales Manager` |
+| **Approved by** | `User Group` → `Sales / Manager` |
+| **Required approvals** | `1` |
+
+Save — the rule is live.
+
+### 4 — See it in action
+
+Create a sales order over €10,000 and press **Confirm**. Instead of confirming, Odoo shows
+*"This operation requires approval and is now pending."* The order stays a quotation and a request
+goes to the Sales Managers. An **Approval** badge also appears in the order form and list.
 
 ---
 
-## Approving and rejecting (the Inbox)
+## Approving and rejecting (My Approvals)
 
-Approvers go to:
+Approvers open **Approval Engine ▸ My Approvals** — a board with one card per pending decision,
+showing the document, the rule, who requested it and the stage. On each card:
 
-```
-Approvals ▸ My Inbox
-```
+- **Approve** ✅ — one click.
+- **Reject** ❌ — opens a short dialog where a reason is required.
 
-This lists every request line waiting for **them**. Click **Decide** on a row to open a small
-dialog where you can:
-
-- **Approve** ✅ — with an optional comment.
-- **Reject** ❌ — with a comment explaining why.
-
-- When the last required approval is given, the original action runs automatically
-  (the sales order confirms itself).
-- A single rejection stops the request immediately and notifies the requester.
+When the last stage approves, the original action runs automatically. A single rejection stops the
+request and notifies the requester.
 
 ---
 
 ## Following the history
 
-Open any request under **Approvals ▸ Requests**. You get:
+Open any request under **Approval Engine ▸ All Requests**:
 
-- The **status bar** (Draft → Pending → Approved/Rejected).
-- A line per approver showing their decision, the date, and their comment.
-- The **chatter** (message history) at the bottom, plus email notifications to approvers and the
-  requester — so there's a permanent, auditable trail of *who approved what, when, and under
-  which rule*.
-
-A smart button on the request takes you straight back to the source document (e.g. the sales order).
+- The **status bar** (Draft → Pending → Approved/Rejected) — change it only through the buttons
+  (**Reopen** brings a finished/cancelled request back to pending).
+- One line per approver with their decision, date and comment.
+- The **chatter** + email notifications — a permanent, auditable trail.
+- A smart button jumps back to the source document.
 
 ---
 
-## Multi-level approvals
+## Multi-stage approvals
 
-Need more than one step? Add several **Levels** to the same rule. They run **in order**:
+Add several **stages** to a rule; they run **in order**:
 
 ```
-Level 1: Sales Manager   →   Level 2: Finance
+Stage 1: Sales Manager   →   Stage 2: Finance
 ```
 
-The request only advances to Level 2 after Level 1 is satisfied, and is only fully approved
-(letting the action run) once **all** levels approve. Set **Min. Approvals** above 1 on a level
-to require several people at the same step.
+The request advances to stage 2 only after stage 1 is satisfied, and is fully approved (letting the
+action run) only once **all** stages approve. Set **Required approvals** above 1 to need several
+people at the same stage.
 
 ---
 
 ## Tips & FAQ
 
-- **Can I watch other documents, not just sales?** Yes — the engine is generic. The *Model* field
-  accepts any Odoo model (purchases, invoices, expenses…). The included sales integration is just
-  the first ready-made one.
-- **Who can configure rules?** Only users in the *Approvals / Manager* group. Regular users only
-  see their own requests and their inbox.
-- **What if no approver is found?** No request is created and the action proceeds — so always
-  make sure the chosen group has members.
-- **Can I temporarily disable a rule?** Yes, untick **Active** (archive it) instead of deleting it.
+- **Why can't I pick any model in a rule?** The *Document* selector lists only integrated documents
+  (those with an approvable action). For *on creation / on modification* rules the engine is
+  generic and works on any model.
+- **Who can configure rules?** Only *Approvals / Manager*. Any internal user can still act as an
+  approver on requests assigned to them — no special group needed.
+- **What if no approver is found?** No request is created and the action proceeds — make sure the
+  chosen group has members.
+- **Can I disable a rule?** Untick **Active** (archive) instead of deleting it.
 
 ---
 
 ## For developers
 
-The technical documentation lives in [`docs/`](docs/):
+Technical docs live in [`docs/`](docs/):
 
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — data model, the rules engine, the mixin
-  integration contract, security design, and the testing strategy.
-- [`docs/INSTALL.md`](docs/INSTALL.md) — installation and how to run the test suite on Odoo 19.
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — data model, engine, generic base hook, the
+  integration contract, security, testing.
+- [`docs/INSTALL.md`](docs/INSTALL.md) — install + run the test suite on Odoo 19.
 
-This project ships two modules: `odoo_approval_engine` (the model-agnostic core) and
-`odoo_approval_sale` (the `sale.order` integration). Current status: **MVP `v0.1.0-mvp`,
-49 automated tests green on Odoo 19.**
+Modules: `odoo_approval_engine` (model-agnostic core) + integrations `odoo_approval_sale`,
+`odoo_approval_purchase`, `odoo_approval_account`, `odoo_approval_expense`. Multilingual
+(English + Spanish). **59 automated tests green on Odoo 19.**

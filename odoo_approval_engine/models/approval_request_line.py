@@ -38,12 +38,25 @@ class ApprovalRequestLine(models.Model):
         string="Document", compute="_compute_source_document",
         help="The business document this approval is about.",
     )
+    stage_label = fields.Char(
+        string="Stage", compute="_compute_stage_label",
+        help="The approval stage this line belongs to.",
+    )
 
     @api.depends("request_id.res_model", "request_id.res_id")
     def _compute_source_document(self):
         for line in self:
             record = line.request_id._get_source_record() if line.request_id else False
             line.source_document = record.sudo().display_name if record else ""
+
+    @api.depends("level", "request_id.rule_id")
+    def _compute_stage_label(self):
+        for line in self:
+            lvl = line.request_id.rule_id.level_ids.filtered(
+                lambda l: l.sequence == line.level
+            )[:1]
+            line.stage_label = (lvl.name if lvl and lvl.name
+                                else _("Approval %s") % line.level)
 
     # --- One-click inbox actions -------------------------------------------
     def _check_can_decide(self):

@@ -1,4 +1,6 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_approval_trigger_all,approval.engine.trigger.all,model_approval_engine_trigger,base.group_user,1,0,0,0
+access_approval_trigger_manager,approval.engine.trigger.manager,model_approval_engine_trigger,odoo_approval_engine.group_approval_manager,1,1,1,1
 access_approval_rule_all,approval.engine.rule.all,model_approval_engine_rule,base.group_user,1,0,0,0
 access_approval_rule_manager,approval.engine.rule.manager,model_approval_engine_rule,odoo_approval_engine.group_approval_manager,1,1,1,1
 access_approval_rule_level_all,approval.engine.rule.level.all,model_approval_engine_rule_level,base.group_user,1,0,0,0

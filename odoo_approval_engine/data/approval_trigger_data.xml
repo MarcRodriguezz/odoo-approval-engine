@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Universal triggers: work on any (integrated) model. -->
+    <record id="trigger_on_create" model="approval.engine.trigger">
+        <field name="name">On creation</field>
+        <field name="code">on_create</field>
+    </record>
+    <record id="trigger_on_write" model="approval.engine.trigger">
+        <field name="name">On modification</field>
+        <field name="code">on_write</field>
+    </record>
+</odoo>

@@ -14,7 +14,7 @@
         <field name="active" eval="True"/>
         <field name="sequence">10</field>
         <field name="model_id" ref="sale.model_sale_order"/>
-        <field name="trigger_event">on_confirm</field>
+        <field name="trigger_id" ref="trigger_sale_confirm"/>
         <field name="condition_python">record.amount_total &gt; 10000</field>
         <field name="level_ids" eval="[
             (0, 0, {

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Approval & Rules Engine",
-    "version": "19.0.1.0.0",
+    "version": "19.0.2.0.0",
     "summary": "Centralized, model-agnostic approval rules engine for Odoo",
     "description": """
 Centralized Approval & Rules Engine
@@ -20,6 +20,7 @@ multi-level approval workflows with full chatter/email traceability.
         "security/ir.model.access.csv",
         # Data
         "data/ir_sequence_data.xml",
+        "data/approval_trigger_data.xml",
         # Views
         "views/approval_rule_views.xml",
         "views/approval_request_views.xml",

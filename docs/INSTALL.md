@@ -1,51 +1,66 @@
 # Installation & Testing (Odoo 19)
 
-This is the technical install/run guide. For end-user instructions see the
-[README](../README.md); for architecture see [ARCHITECTURE.md](ARCHITECTURE.md).
+Technical install/run guide. End-user docs: [README](../README.md). Architecture:
+[ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Modules
 
 | Module | Depends on | Purpose |
 |--------|-----------|---------|
-| `odoo_approval_engine` | `base`, `mail` | Model-agnostic core: rules, engine, requests, inbox UI, security. |
-| `odoo_approval_sale` | `odoo_approval_engine`, `sale` | `sale.order` integration (high-value orders need approval). |
+| `odoo_approval_engine` | `base`, `mail` | Model-agnostic core: rules, approvable actions (triggers), the generic create/write hook, requests, inbox UI, security. |
+| `odoo_approval_sale` | engine, `sale` | Gate `sale.order` confirmation. |
+| `odoo_approval_purchase` | engine, `purchase` | Gate `purchase.order` confirmation (2-step demo rule). |
+| `odoo_approval_account` | engine, `account` | Gate `account.move` posting (invoices). |
+| `odoo_approval_expense` | engine, `hr_expense` | Gate `hr.expense` submission. |
 
-Both must live on the Odoo `addons_path`. In this project they are tracked directly under the
-Docker instance's `addons/extra/` (mapped to `/mnt/extra-addons`).
+All live under the Docker instance's `addons/extra/` (mapped to `/mnt/extra-addons`).
 
 ## Install
 
-Install the integration module — it pulls the core and `sale` automatically:
+Install only what you need; each integration pulls the core automatically:
 
 ```bash
-docker exec odoo19-app odoo -d <db> -i odoo_approval_sale \
+docker exec odoo19-app odoo -d <db> \
+  -i odoo_approval_sale,odoo_approval_purchase,odoo_approval_account,odoo_approval_expense \
   --db_host=db --db_user=odoo --db_password=odoo --stop-after-init \
   --http-port=8999 --gevent-port=8998 --max-cron-threads=0
-# then reload the web server so it picks up the new modules
-docker restart odoo19-app
+docker restart odoo19-app   # reload the web server
 ```
 
-To install only the generic core (no sales integration), use `-i odoo_approval_engine`.
+Install only the generic core with `-i odoo_approval_engine` (on_create/on_write rules on any
+model still work; document-action gating needs an integration module).
 
-> The running server occupies ports 8069/8072, so one-off CLI runs must pass alternate
-> `--http-port`/`--gevent-port` values.
+> The running server holds ports 8069/8072, so one-off CLI runs must pass alternate
+> `--http-port` / `--gevent-port`.
 
 ## Run the test suite
 
 ```bash
-docker exec odoo19-app odoo -d approval_test -u odoo_approval_engine,odoo_approval_sale \
-  --db_host=db --db_user=odoo --db_password=odoo \
-  --test-enable --test-tags=/odoo_approval_engine,/odoo_approval_sale \
+docker exec odoo19-app odoo -d approval_test \
+  -i odoo_approval_sale,odoo_approval_purchase,odoo_approval_account,odoo_approval_expense \
+  --db_host=db --db_user=odoo --db_password=odoo --test-enable \
+  --test-tags=/odoo_approval_engine,/odoo_approval_sale,/odoo_approval_purchase,/odoo_approval_account,/odoo_approval_expense \
   --stop-after-init --http-port=8999 --gevent-port=8998 --max-cron-threads=0
 ```
 
-Expected: `0 failed, 0 error(s)` — 49 tests green (44 core + 5 sale, incl. a multi-level e2e).
+Expected: **0 failed, 0 error(s)** — 59 tests (engine 58 incl. a generic on_create test on
+res.partner; sale 7; purchase 4; account 4; expense 4).
 
-Run a single module's tests with `--test-tags=/odoo_approval_engine`, or by tag with
-`--test-tags=approval`.
+## Translations (i18n)
+
+Templates and Spanish translations live in each module's `i18n/`. Re-export the `.pot` after
+changing user-facing strings:
+
+```bash
+docker exec -e PGHOST=db -e PGUSER=odoo -e PGPASSWORD=odoo odoo19-app \
+  odoo i18n export -d approval_test odoo_approval_engine odoo_approval_sale \
+  odoo_approval_purchase odoo_approval_account odoo_approval_expense
+```
+
+Load translations into a DB with `-u <module> --i18n-overwrite`.
 
 ## Local Docker stack
 
-- `odoo19-app` — Odoo 19 server (web on 8069, websocket on 8072).
+- `odoo19-app` — Odoo 19 server (web 8069, websocket 8072).
 - `odoo19-db` — PostgreSQL 16 (user/password `odoo`/`odoo`).
-- Databases: `odoo` (usable instance, modules installed) and `approval_test` (CI/test DB).
+- Databases: `odoo` (usable instance) and `approval_test` (CI/test DB).

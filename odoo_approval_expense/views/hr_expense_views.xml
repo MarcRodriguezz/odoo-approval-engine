@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Form: approval state badge next to the status bar -->
+    <record id="view_hr_expense_form_approval_state" model="ir.ui.view">
+        <field name="name">hr.expense.form.approval.state</field>
+        <field name="model">hr.expense</field>
+        <field name="inherit_id" ref="hr_expense.hr_expense_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="(//header/field[@name='state'])[1]" position="before">
+                <field name="approval_engine_state" widget="badge"
+                       decoration-warning="approval_engine_state == 'pending'"
+                       decoration-success="approval_engine_state == 'approved'"
+                       decoration-danger="approval_engine_state == 'rejected'"
+                       decoration-muted="approval_engine_state == 'none'"
+                       string="Approval"
+                       invisible="approval_engine_state == 'none'"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Expenses list: approval column -->
+    <record id="view_expenses_tree_approval_state" model="ir.ui.view">
+        <field name="name">hr.expense.list.approval.state</field>
+        <field name="model">hr.expense</field>
+        <field name="inherit_id" ref="hr_expense.view_expenses_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <field name="approval_engine_state" widget="badge"
+                       decoration-warning="approval_engine_state == 'pending'"
+                       decoration-success="approval_engine_state == 'approved'"
+                       decoration-danger="approval_engine_state == 'rejected'"
+                       decoration-muted="approval_engine_state == 'none'"
+                       string="Approval" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

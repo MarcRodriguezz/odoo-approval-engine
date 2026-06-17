@@ -4,7 +4,7 @@ from odoo import models, fields, _
 
 class ApprovalEngineMixin(models.AbstractModel):
     """Optional mixin for models that want to *block* a business action
-    (e.g. confirmation) until approved, and expose approval_state in their UI.
+    (e.g. confirmation) until approved, and expose approval_engine_state in their UI.
 
     NOTE: the matching engine itself is generic and also runs on ANY model for
     on_create / on_write rules via the global ``base`` hook (see base_approval.py)
@@ -15,12 +15,12 @@ class ApprovalEngineMixin(models.AbstractModel):
     _name = "approval.engine.mixin"
     _description = "Approval Engine Mixin"
 
-    approval_request_ids = fields.One2many(
+    approval_engine_request_ids = fields.One2many(
         "approval.engine.request",
         compute="_compute_approval_requests",
         string="Approval Requests",
     )
-    approval_state = fields.Selection(
+    approval_engine_state = fields.Selection(
         [
             ("none", "No Approval"),
             ("pending", "Pending Approval"),
@@ -39,17 +39,17 @@ class ApprovalEngineMixin(models.AbstractModel):
             requests = Request.search(
                 [("res_model", "=", record._name), ("res_id", "=", record.id)]
             )
-            record.approval_request_ids = requests
+            record.approval_engine_request_ids = requests
             if not requests:
-                record.approval_state = "none"
+                record.approval_engine_state = "none"
             elif requests.filtered(lambda r: r.state == "pending"):
-                record.approval_state = "pending"
+                record.approval_engine_state = "pending"
             elif requests.filtered(lambda r: r.state == "rejected"):
-                record.approval_state = "rejected"
+                record.approval_engine_state = "rejected"
             elif requests.filtered(lambda r: r.state == "approved"):
-                record.approval_state = "approved"
+                record.approval_engine_state = "approved"
             else:
-                record.approval_state = "none"
+                record.approval_engine_state = "none"
 
     # --- Engine entry points (delegate to the shared engine) ----------------
     def _evaluate_approval_rules(self, trigger_event):

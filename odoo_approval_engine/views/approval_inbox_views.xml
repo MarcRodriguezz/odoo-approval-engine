@@ -11,7 +11,7 @@
                     <t t-name="card">
                         <div class="d-flex justify-content-between align-items-start">
                             <field name="source_document" class="fw-bolder fs-5"/>
-                            <span class="badge text-bg-warning">Step <field name="level"/></span>
+                            <field name="stage_label" class="badge text-bg-warning"/>
                         </div>
                         <div class="text-muted mt-1">
                             <i class="fa fa-gavel me-1" title="Rule"/><field name="rule_id"/>
@@ -50,7 +50,7 @@
                 <field name="source_document"/>
                 <field name="rule_id"/>
                 <field name="requested_by"/>
-                <field name="level"/>
+                <field name="stage_label"/>
                 <field name="request_date"/>
                 <button name="action_quick_approve" type="object"
                         string="Approve" icon="fa-check" class="text-success"

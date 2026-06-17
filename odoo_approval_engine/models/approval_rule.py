@@ -10,8 +10,19 @@ class ApprovalRule(models.Model):
     _description = "Approval Rule"
     _order = "sequence, id"
 
+    @api.model
+    def _sync_trigger_event(self, vals):
+        """Keep the technical matching key (trigger_event) in sync with the
+        user-facing trigger_id selector."""
+        if vals.get("trigger_id"):
+            trig = self.env["approval.engine.trigger"].browse(vals["trigger_id"])
+            vals["trigger_event"] = trig.code
+        return vals
+
     @api.model_create_multi
     def create(self, vals_list):
+        for vals in vals_list:
+            self._sync_trigger_event(vals)
         rules = super().create(vals_list)
         # @api.constrains on level_ids does not fire when the field is absent
         # from create vals, so enforce the "at least one level" rule here too.
@@ -20,6 +31,7 @@ class ApprovalRule(models.Model):
         return rules
 
     def write(self, vals):
+        self._sync_trigger_event(vals)
         res = super().write(vals)
         # Rules changed -> the cache of "which models have rules" is stale.
         self.env.registry.clear_cache()
@@ -43,25 +55,58 @@ class ApprovalRule(models.Model):
     name = fields.Char(required=True)
     active = fields.Boolean(default=True)
     sequence = fields.Integer(default=10)
+    # Only integrated models (those that expose an approvable action) can be
+    # selected — see _compute_allowed_model_ids + the view domain.
+    allowed_model_ids = fields.Many2many(
+        "ir.model", compute="_compute_allowed_model_ids",
+        string="Selectable Models",
+    )
     model_id = fields.Many2one(
         "ir.model",
         string="Model",
         required=True,
         ondelete="cascade",
-        help="Model this rule applies to.",
+        help="Business document this rule applies to.",
     )
     model_name = fields.Char(
         related="model_id.model", string="Model Name", store=True, index=True
     )
-    trigger_event = fields.Selection(
-        [
-            ("on_create", "On Create"),
-            ("on_write", "On Write"),
-            ("on_confirm", "On Confirm"),
-        ],
-        required=True,
-        default="on_confirm",
+    trigger_id = fields.Many2one(
+        "approval.engine.trigger",
+        string="Approvable Action",
+        ondelete="restrict",
+        help="Which action on the document requires approval.",
     )
+    # Technical matching key, derived from trigger_id (kept for the engine).
+    trigger_event = fields.Char(string="Trigger Code", readonly=True, copy=True)
+
+    @api.depends_context("uid")
+    def _compute_allowed_model_ids(self):
+        triggers = self.env["approval.engine.trigger"].sudo().search(
+            [("model_id", "!=", False)]
+        )
+        models_ = triggers.mapped("model_id")
+        for rule in self:
+            rule.allowed_model_ids = models_
+
+    @api.onchange("model_id")
+    def _onchange_model_id(self):
+        # Reset the action when the model changes if it no longer matches.
+        if self.trigger_id and self.trigger_id.model_id \
+                and self.trigger_id.model_id != self.model_id:
+            self.trigger_id = False
+
+    @api.onchange("trigger_id")
+    def _onchange_trigger_id(self):
+        self.trigger_event = self.trigger_id.code or False
+
+    @api.constrains("trigger_event")
+    def _check_trigger(self):
+        for rule in self:
+            if not rule.trigger_event:
+                raise ValidationError(
+                    _("Please choose the action that requires approval.")
+                )
     condition_domain = fields.Char(
         string="Condition (Domain)",
         help="Odoo domain evaluated against the triggering record.",

@@ -1,0 +1,52 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* odoo_approval_expense
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e-20260528\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-16 11:49+0000\n"
+"PO-Revision-Date: 2026-06-16 11:49+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: odoo_approval_expense
+#: model_terms:ir.ui.view,arch_db:odoo_approval_expense.view_expenses_tree_approval_state
+#: model_terms:ir.ui.view,arch_db:odoo_approval_expense.view_hr_expense_form_approval_state
+msgid "Approval"
+msgstr ""
+
+#. module: odoo_approval_expense
+#: model:ir.model.fields,field_description:odoo_approval_expense.field_hr_expense__approval_engine_request_ids
+msgid "Approval Requests"
+msgstr ""
+
+#. module: odoo_approval_expense
+#: model:ir.model.fields,field_description:odoo_approval_expense.field_hr_expense__approval_engine_state
+msgid "Approval State"
+msgstr ""
+
+#. module: odoo_approval_expense
+#: model:ir.model.fields,field_description:odoo_approval_expense.field_hr_expense__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: odoo_approval_expense
+#: model:ir.model,name:odoo_approval_expense.model_hr_expense
+msgid "Expense"
+msgstr ""
+
+#. module: odoo_approval_expense
+#: model:approval.engine.trigger,name:odoo_approval_expense.trigger_expense_submit
+msgid "Expense: Submission"
+msgstr ""
+
+#. module: odoo_approval_expense
+#: model:ir.model.fields,field_description:odoo_approval_expense.field_hr_expense__id
+msgid "ID"
+msgstr ""

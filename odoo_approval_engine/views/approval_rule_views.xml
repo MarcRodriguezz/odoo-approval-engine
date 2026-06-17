@@ -10,7 +10,7 @@
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
                 <field name="model_id"/>
-                <field name="trigger_event"/>
+                <field name="trigger_id"/>
                 <field name="company_id" groups="base.group_multi_company"/>
                 <field name="active" widget="boolean_toggle"/>
             </list>
@@ -24,39 +24,54 @@
         <field name="arch" type="xml">
             <form string="Approval Rule">
                 <sheet>
-                    <div class="oe_button_box" name="button_box"/>
                     <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger"
                             invisible="active"/>
                     <div class="oe_title">
                         <label for="name"/>
                         <h1>
-                            <field name="name" placeholder="e.g. Sales Manager Approval"/>
+                            <field name="name" placeholder="e.g. High-value sales orders"/>
                         </h1>
                     </div>
                     <group>
-                        <group string="Rule Configuration">
-                            <field name="model_id" options="{'no_create': True}"/>
+                        <group string="When does it apply?">
+                            <field name="allowed_model_ids" invisible="1"/>
                             <field name="model_name" invisible="1"/>
-                            <field name="trigger_event"/>
+                            <field name="trigger_event" invisible="1"/>
+                            <field name="model_id" options="{'no_create': True}"
+                                   domain="[('id', 'in', allowed_model_ids)]"
+                                   placeholder="Choose a document type…"/>
+                            <field name="trigger_id"
+                                   required="1"
+                                   readonly="not model_id"
+                                   options="{'no_create': True}"
+                                   domain="['|', ('model_id', '=', False), ('model_id', '=', model_id)]"
+                                   placeholder="Which action requires approval?"/>
                             <field name="sequence"/>
                             <field name="company_id" groups="base.group_multi_company"/>
                             <field name="active" widget="boolean_toggle"/>
                         </group>
                     </group>
                     <notebook>
-                        <page string="Approval Levels" name="levels">
+                        <page string="Who must approve" name="approvers">
+                            <div class="text-muted mb-2">
+                                Add one row per approval stage. Stages run top to
+                                bottom: the request only moves on once each stage
+                                has enough approvals.
+                            </div>
                             <field name="level_ids">
-                                <list editable="bottom" string="Approval Levels">
+                                <list editable="bottom" string="Approval stages">
                                     <field name="sequence" widget="handle"/>
-                                    <field name="name" placeholder="e.g. Manager"/>
-                                    <field name="approver_type"/>
-                                    <field name="approver_group_id"
+                                    <field name="name" string="Stage"
+                                           placeholder="e.g. Manager"/>
+                                    <field name="approver_type" string="Approved by"/>
+                                    <field name="approver_group_id" string="Group"
                                            invisible="approver_type != 'group'"
                                            required="approver_type == 'group'"/>
-                                    <field name="approver_expression"
+                                    <field name="approver_expression" string="Expression"
                                            invisible="approver_type != 'expression'"
                                            required="approver_type == 'expression'"/>
-                                    <field name="min_approvals"/>
+                                    <field name="min_approvals"
+                                           string="Required approvals"/>
                                 </list>
                             </field>
                         </page>
@@ -89,8 +104,8 @@
                 Create your first approval rule
             </p>
             <p>
-                Configure rules to automatically trigger approval workflows
-                when records are created, modified, or confirmed.
+                Pick a document type and the action that should require approval,
+                then list who must approve it.
             </p>
         </field>
     </record>

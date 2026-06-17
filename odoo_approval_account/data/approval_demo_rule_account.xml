@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Demo: customer invoices over 5,000 need an Accounting Manager to
+         approve before they can be posted. -->
+    <record id="approval_rule_account_high_value" model="approval.engine.rule">
+        <field name="name">Invoice — High Value (&gt; 5,000)</field>
+        <field name="active" eval="True"/>
+        <field name="sequence">10</field>
+        <field name="model_id" ref="account.model_account_move"/>
+        <field name="trigger_id" ref="trigger_account_post"/>
+        <field name="condition_python">record.move_type == 'out_invoice' and record.amount_total &gt; 5000</field>
+        <field name="level_ids" eval="[
+            (0, 0, {
+                'sequence': 1,
+                'name': 'Accounting Manager',
+                'approver_type': 'group',
+                'approver_group_id': ref('account.group_account_manager'),
+                'min_approvals': 1,
+            })
+        ]"/>
+    </record>
+</odoo>

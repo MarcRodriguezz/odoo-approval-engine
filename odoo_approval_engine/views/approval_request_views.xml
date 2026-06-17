@@ -88,7 +88,7 @@
                                       decoration-success="decision == 'approved'"
                                       decoration-danger="decision == 'rejected'"
                                       decoration-warning="decision == 'pending'">
-                                    <field name="level" string="Step"/>
+                                    <field name="stage_label" string="Stage"/>
                                     <field name="approver_id"/>
                                     <field name="decision" widget="badge"
                                            decoration-success="decision == 'approved'"

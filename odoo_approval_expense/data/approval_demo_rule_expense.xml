@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Demo: expenses over 1,000 need an Expense Approver before submission. -->
+    <record id="approval_rule_expense_high_value" model="approval.engine.rule">
+        <field name="name">Expense — High Value (&gt; 1,000)</field>
+        <field name="active" eval="True"/>
+        <field name="sequence">10</field>
+        <field name="model_id" ref="hr_expense.model_hr_expense"/>
+        <field name="trigger_id" ref="trigger_expense_submit"/>
+        <field name="condition_python">record.total_amount_currency &gt; 1000</field>
+        <field name="level_ids" eval="[
+            (0, 0, {
+                'sequence': 1,
+                'name': 'Expense Approver',
+                'approver_type': 'group',
+                'approver_group_id': ref('hr_expense.group_hr_expense_team_approver'),
+                'min_approvals': 1,
+            })
+        ]"/>
+    </record>
+</odoo>

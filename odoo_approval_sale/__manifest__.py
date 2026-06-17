@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Approval Engine — Sale Order Integration",
-    "version": "19.0.1.0.0",
+    "version": "19.0.2.0.0",
     "license": "LGPL-3",
     "category": "Sales",
     "summary": "Wire sale.order into the centralized approval engine",
@@ -13,6 +13,7 @@
     "author": "Custom",
     "depends": ["odoo_approval_engine", "sale"],
     "data": [
+        "data/approval_trigger_sale.xml",
         "views/sale_order_views.xml",
         "data/approval_demo_rule.xml",
     ],

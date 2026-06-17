@@ -7,13 +7,13 @@
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
             <xpath expr="//header/field[@name='state']" position="before">
-                <field name="approval_state" widget="badge"
-                       decoration-warning="approval_state == 'pending'"
-                       decoration-success="approval_state == 'approved'"
-                       decoration-danger="approval_state == 'rejected'"
-                       decoration-muted="approval_state == 'none'"
+                <field name="approval_engine_state" widget="badge"
+                       decoration-warning="approval_engine_state == 'pending'"
+                       decoration-success="approval_engine_state == 'approved'"
+                       decoration-danger="approval_engine_state == 'rejected'"
+                       decoration-muted="approval_engine_state == 'none'"
                        string="Approval"
-                       invisible="approval_state == 'none'"/>
+                       invisible="approval_engine_state == 'none'"/>
             </xpath>
         </field>
     </record>
@@ -25,11 +25,11 @@
         <field name="inherit_id" ref="sale.view_order_tree"/>
         <field name="arch" type="xml">
             <xpath expr="//list" position="inside">
-                <field name="approval_state" widget="badge"
-                       decoration-warning="approval_state == 'pending'"
-                       decoration-success="approval_state == 'approved'"
-                       decoration-danger="approval_state == 'rejected'"
-                       decoration-muted="approval_state == 'none'"
+                <field name="approval_engine_state" widget="badge"
+                       decoration-warning="approval_engine_state == 'pending'"
+                       decoration-success="approval_engine_state == 'approved'"
+                       decoration-danger="approval_engine_state == 'rejected'"
+                       decoration-muted="approval_engine_state == 'none'"
                        string="Approval" optional="show"/>
             </xpath>
         </field>
@@ -42,11 +42,11 @@
         <field name="inherit_id" ref="sale.view_quotation_tree"/>
         <field name="arch" type="xml">
             <xpath expr="//list" position="inside">
-                <field name="approval_state" widget="badge"
-                       decoration-warning="approval_state == 'pending'"
-                       decoration-success="approval_state == 'approved'"
-                       decoration-danger="approval_state == 'rejected'"
-                       decoration-muted="approval_state == 'none'"
+                <field name="approval_engine_state" widget="badge"
+                       decoration-warning="approval_engine_state == 'pending'"
+                       decoration-success="approval_engine_state == 'approved'"
+                       decoration-danger="approval_engine_state == 'rejected'"
+                       decoration-muted="approval_engine_state == 'none'"
                        string="Approval" optional="show"/>
             </xpath>
         </field>

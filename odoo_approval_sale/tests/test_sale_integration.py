@@ -3,7 +3,7 @@
 
 Tests cover:
 1. High-value order: action_confirm is blocked; an approval.engine.request in state
-   'pending' is created; order.approval_state == 'pending'.
+   'pending' is created; order.approval_engine_state == 'pending'.
 2. Full approval cycle: approving the request triggers _on_approval_approved
    which calls action_confirm(approval_bypass=True) -> order.state == 'sale'.
 3. Low-value order: action_confirm passes through immediately; no request is
@@ -105,10 +105,10 @@ class TestSaleIntegration(TransactionCase):
             order.state, "sale",
             "High-value order must stay in draft/sent while awaiting approval.",
         )
-        # approval_state must be 'pending'
+        # approval_engine_state must be 'pending'
         self.assertEqual(
-            order.approval_state, "pending",
-            "approval_state must be 'pending' after rule match.",
+            order.approval_engine_state, "pending",
+            "approval_engine_state must be 'pending' after rule match.",
         )
         # Exactly one approval.engine.request must exist for this order
         requests = self.env["approval.engine.request"].search([
@@ -229,12 +229,12 @@ class TestSaleIntegration(TransactionCase):
         order.partner_id = self.partner
 
         # Act as the salesperson — this used to raise AccessError on the
-        # approval_request_ids compute / rule search.
+        # approval_engine_request_ids compute / rule search.
         order_as_user = order.with_user(salesperson)
         order_as_user.action_confirm()  # must not raise
 
         self.assertNotEqual(order_as_user.state, "sale")
-        self.assertEqual(order_as_user.approval_state, "pending")
+        self.assertEqual(order_as_user.approval_engine_state, "pending")
 
     # ------------------------------------------------------------------
     # Test 3: low-value order bypasses approval entirely
@@ -262,5 +262,5 @@ class TestSaleIntegration(TransactionCase):
             "No approval.engine.request must be created for a low-value order.",
         )
 
-        # approval_state must be 'none'
-        self.assertEqual(order.approval_state, "none")
+        # approval_engine_state must be 'none'
+        self.assertEqual(order.approval_engine_state, "none")

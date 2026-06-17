@@ -8,7 +8,8 @@
         <field name="arch" type="xml">
             <form string="Review Approval">
                 <div class="alert alert-info" role="alert">
-                    You are reviewing step <field name="level" class="oe_inline"/> of an approval request.
+                    You are reviewing an approval request. Approve to pass it to
+                    the next stage, or reject it (a reason is required).
                 </div>
                 <group>
                     <field name="document" readonly="1"/>
