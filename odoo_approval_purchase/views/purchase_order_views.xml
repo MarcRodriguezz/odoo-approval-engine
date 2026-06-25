@@ -33,4 +33,21 @@
             </xpath>
         </field>
     </record>
+
+    <!-- RFQ list (the "Requests for Quotation" menu uses the KPI tree) -->
+    <record id="view_purchase_order_kpis_tree_approval_state" model="ir.ui.view">
+        <field name="name">purchase.order.rfq.list.approval.state</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_kpis_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <field name="approval_engine_state" widget="badge"
+                       decoration-warning="approval_engine_state == 'pending'"
+                       decoration-success="approval_engine_state == 'approved'"
+                       decoration-danger="approval_engine_state == 'rejected'"
+                       decoration-muted="approval_engine_state == 'none'"
+                       string="Approval"/>
+            </xpath>
+        </field>
+    </record>
 </odoo>
