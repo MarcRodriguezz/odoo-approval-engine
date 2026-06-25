@@ -33,12 +33,12 @@
         <field name="arch" type="xml">
             <form string="Approval Request">
                 <header>
-                    <button name="action_reset_to_pending"
-                            string="Reopen"
+                    <button name="action_step_back"
+                            string="Step back"
                             type="object"
                             class="btn-primary"
-                            invisible="state == 'pending'"
-                            help="Reopen this request so it can be approved or rejected again."/>
+                            invisible="state == 'draft'"
+                            help="Send the request back one stage. Press again to go further back."/>
                     <button name="action_cancel"
                             string="Cancel"
                             type="object"
@@ -82,14 +82,18 @@
                         </group>
                     </group>
                     <notebook>
-                        <page string="Approvers" name="lines">
+                        <page string="Stages" name="lines">
                             <field name="line_ids" readonly="1">
-                                <list string="Approvers" create="false" delete="false"
+                                <list string="Stages" create="false" delete="false"
                                       decoration-success="decision == 'approved'"
                                       decoration-danger="decision == 'rejected'"
                                       decoration-warning="decision == 'pending'">
                                     <field name="stage_label" string="Stage"/>
-                                    <field name="approver_id"/>
+                                    <field name="candidate_user_ids" widget="many2many_tags"
+                                           string="Can approve"/>
+                                    <field name="min_approvals" string="Needs"/>
+                                    <field name="approved_by_ids" widget="many2many_tags"
+                                           string="Approved by"/>
                                     <field name="decision" widget="badge"
                                            decoration-success="decision == 'approved'"
                                            decoration-danger="decision == 'rejected'"

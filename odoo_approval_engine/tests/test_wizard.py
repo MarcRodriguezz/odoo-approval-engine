@@ -58,7 +58,8 @@ class TestApprovalDecisionWizard(TransactionCase):
             {
                 "request_id": request.id,
                 "level": 1,
-                "approver_id": self.env.user.id,
+                "min_approvals": 1,
+                "candidate_user_ids": [(6, 0, [self.env.user.id])],
                 "decision": decision,
             }
         )

@@ -4,16 +4,37 @@ from odoo.exceptions import UserError
 
 
 class ApprovalRequestLine(models.Model):
+    """One line per APPROVAL STAGE (not per candidate user).
+
+    A stage lists its *candidate* approvers (a group / expression) and records
+    who actually approved (``approved_by_ids``). The stage is cleared once
+    ``min_approvals`` distinct candidates have approved.
+    """
+
     _name = "approval.engine.request.line"
-    _description = "Approval Request Line"
+    _description = "Approval Request Stage"
     _order = "level, id"
 
     request_id = fields.Many2one(
         "approval.engine.request", string="Request",
         required=True, ondelete="cascade",
     )
-    level = fields.Integer(string="Step", required=True, default=1)
-    approver_id = fields.Many2one("res.users", string="Approver", required=True)
+    level = fields.Integer(string="Stage Order", required=True, default=1)
+    min_approvals = fields.Integer(string="Required Approvals", default=1)
+    candidate_user_ids = fields.Many2many(
+        "res.users", "approval_line_candidate_rel", "line_id", "user_id",
+        string="Can approve",
+        help="Users allowed to approve this stage.",
+    )
+    approved_by_ids = fields.Many2many(
+        "res.users", "approval_line_approved_rel", "line_id", "user_id",
+        string="Approved by", copy=False,
+        help="Users who have approved this stage so far.",
+    )
+    approver_id = fields.Many2one(
+        "res.users", string="Decided by", copy=False,
+        help="User who closed this stage (last approval, or the rejecter).",
+    )
     decision = fields.Selection(
         [
             ("pending", "Pending"),
@@ -56,28 +77,34 @@ class ApprovalRequestLine(models.Model):
                 lambda l: l.sequence == line.level
             )[:1]
             line.stage_label = (lvl.name if lvl and lvl.name
-                                else _("Approval %s") % line.level)
+                                else _("Stage %s") % line.level)
+
+    # --- Permission helper --------------------------------------------------
+    def _check_can_decide(self):
+        """Only a candidate of this stage (who hasn't approved yet) or an
+        Approvals Manager may decide."""
+        self.ensure_one()
+        user = self.env.user
+        is_manager = user.has_group("odoo_approval_engine.group_approval_manager")
+        if is_manager:
+            return
+        line = self.with_context(active_test=False)
+        if user not in line.candidate_user_ids:
+            raise UserError(_("You are not an approver for this stage."))
+        if user in line.approved_by_ids:
+            raise UserError(_("You have already approved this stage."))
 
     # --- One-click inbox actions -------------------------------------------
-    def _check_can_decide(self):
-        """Only the assigned approver (or an Approvals Manager) may decide."""
-        self.ensure_one()
-        is_manager = self.env.user.has_group(
-            "odoo_approval_engine.group_approval_manager"
-        )
-        if self.env.user != self.approver_id and not is_manager:
-            raise UserError(
-                _("Only the assigned approver can decide on this step.")
-            )
-
     def action_quick_approve(self):
-        """Approve this step in one click (no comment)."""
+        """Approve this stage in one click (no comment)."""
         self.ensure_one()
         self._check_can_decide()
-        # sudo: the approval is the authorization; advancing the workflow
-        # generates lines for the next step's approvers, which a plain user
-        # could not create under their own rights.
-        self.request_id.sudo()._register_decision(self.sudo(), "approved", False)
+        actor = self.env.user
+        # sudo: advancing the workflow creates the next stage's line, which a
+        # plain approver could not do under their own rights.
+        self.request_id.sudo()._register_decision(
+            self.sudo(), "approved", False, actor=actor,
+        )
         return {
             "type": "ir.actions.client",
             "tag": "display_notification",
@@ -90,8 +117,7 @@ class ApprovalRequestLine(models.Model):
         }
 
     def action_open_decision_wizard(self):
-        """Open the decision dialog pre-filled for this line (used for Reject
-        and for adding a comment)."""
+        """Open the decision dialog pre-filled for this stage (Reject / comment)."""
         self.ensure_one()
         return {
             "type": "ir.actions.act_window",

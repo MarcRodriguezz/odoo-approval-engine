@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e-20260528\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-16 11:49+0000\n"
-"PO-Revision-Date: 2026-06-16 11:49+0000\n"
+"POT-Creation-Date: 2026-06-25 07:35+0000\n"
+"PO-Revision-Date: 2026-06-25 07:35+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -26,7 +26,13 @@ msgstr ""
 #. module: odoo_approval_engine
 #. odoo-python
 #: code:addons/odoo_approval_engine/models/approval_request.py:0
-msgid "%(approver)s %(verb)s level %(level)s.%(comment)s"
+msgid "%(user)s approved stage “%(stage)s”.%(comment)s"
+msgstr ""
+
+#. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_request.py:0
+msgid "%(user)s rejected stage “%(stage)s”.%(comment)s"
 msgstr ""
 
 #. module: odoo_approval_engine
@@ -129,12 +135,6 @@ msgid "Approval"
 msgstr ""
 
 #. module: odoo_approval_engine
-#. odoo-python
-#: code:addons/odoo_approval_engine/models/approval_request_line.py:0
-msgid "Approval %s"
-msgstr ""
-
-#. module: odoo_approval_engine
 #: model:ir.model,name:odoo_approval_engine.model_approval_decision_wizard
 msgid "Approval Decision Wizard"
 msgstr ""
@@ -167,7 +167,7 @@ msgstr ""
 
 #. module: odoo_approval_engine
 #: model:ir.model,name:odoo_approval_engine.model_approval_engine_request_line
-msgid "Approval Request Line"
+msgid "Approval Request Stage"
 msgstr ""
 
 #. module: odoo_approval_engine
@@ -267,12 +267,13 @@ msgid "Approved"
 msgstr ""
 
 #. module: odoo_approval_engine
+#: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request_line__approved_by_ids
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_form_view
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_rule_form_view
 msgid "Approved by"
 msgstr ""
 
 #. module: odoo_approval_engine
-#: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request_line__approver_id
 #: model:res.groups,name:odoo_approval_engine.group_approval_approver
 msgid "Approver"
 msgstr ""
@@ -299,11 +300,6 @@ msgid "Approver expression on level '%s' must return a res.users recordset."
 msgstr ""
 
 #. module: odoo_approval_engine
-#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_form_view
-msgid "Approvers"
-msgstr ""
-
-#. module: odoo_approval_engine
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_rule_form_view
 msgid "Archived"
 msgstr ""
@@ -326,6 +322,12 @@ msgstr ""
 #. module: odoo_approval_engine
 #: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_rule__model_id
 msgid "Business document this rule applies to."
+msgstr ""
+
+#. module: odoo_approval_engine
+#: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request_line__candidate_user_ids
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_form_view
+msgid "Can approve"
 msgstr ""
 
 #. module: odoo_approval_engine
@@ -437,6 +439,11 @@ msgstr ""
 #. module: odoo_approval_engine
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_form_view
 msgid "Current step"
+msgstr ""
+
+#. module: odoo_approval_engine
+#: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request_line__approver_id
+msgid "Decided by"
 msgstr ""
 
 #. module: odoo_approval_engine
@@ -665,6 +672,11 @@ msgid "Name"
 msgstr ""
 
 #. module: odoo_approval_engine
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_form_view
+msgid "Needs"
+msgstr ""
+
+#. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request__activity_date_deadline
 msgid "Next Activity Deadline"
 msgstr ""
@@ -749,12 +761,6 @@ msgstr ""
 #. odoo-python
 #: code:addons/odoo_approval_engine/models/approval_request.py:0
 msgid "Only draft requests can be submitted (request %s is '%s')."
-msgstr ""
-
-#. module: odoo_approval_engine
-#. odoo-python
-#: code:addons/odoo_approval_engine/models/approval_request_line.py:0
-msgid "Only the assigned approver can decide on this step."
 msgstr ""
 
 #. module: odoo_approval_engine
@@ -843,16 +849,6 @@ msgid "Rejected"
 msgstr ""
 
 #. module: odoo_approval_engine
-#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_form_view
-msgid "Reopen"
-msgstr ""
-
-#. module: odoo_approval_engine
-#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_form_view
-msgid "Reopen this request so it can be approved or rejected again."
-msgstr ""
-
-#. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_decision_wizard__request_id
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request_line__request_id
 msgid "Request"
@@ -883,12 +879,6 @@ msgstr ""
 #. module: odoo_approval_engine
 #. odoo-python
 #: code:addons/odoo_approval_engine/models/approval_request.py:0
-msgid "Request reopened for approval."
-msgstr ""
-
-#. module: odoo_approval_engine
-#. odoo-python
-#: code:addons/odoo_approval_engine/models/approval_request.py:0
 msgid "Request submitted for approval (level 1)."
 msgstr ""
 
@@ -913,6 +903,11 @@ msgstr ""
 msgid ""
 "Requests waiting for your approval will appear here. Approve or\n"
 "                reject them directly from this screen."
+msgstr ""
+
+#. module: odoo_approval_engine
+#: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request_line__min_approvals
+msgid "Required Approvals"
 msgstr ""
 
 #. module: odoo_approval_engine
@@ -958,6 +953,17 @@ msgid "Selectable Models"
 msgstr ""
 
 #. module: odoo_approval_engine
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_form_view
+msgid "Send the request back one stage. Press again to go further back."
+msgstr ""
+
+#. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_request.py:0
+msgid "Sent back to stage “%s”."
+msgstr ""
+
+#. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_rule__sequence
 msgid "Sequence"
 msgstr ""
@@ -985,6 +991,22 @@ msgid "Stage"
 msgstr ""
 
 #. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_request_line.py:0
+msgid "Stage %s"
+msgstr ""
+
+#. module: odoo_approval_engine
+#: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request_line__level
+msgid "Stage Order"
+msgstr ""
+
+#. module: odoo_approval_engine
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_form_view
+msgid "Stages"
+msgstr ""
+
+#. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request__state
 msgid "State"
 msgstr ""
@@ -1000,8 +1022,12 @@ msgstr ""
 
 #. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_decision_wizard__level
-#: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request_line__level
 msgid "Step"
+msgstr ""
+
+#. module: odoo_approval_engine
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_form_view
+msgid "Step back"
 msgstr ""
 
 #. module: odoo_approval_engine
@@ -1060,6 +1086,21 @@ msgid "User Group"
 msgstr ""
 
 #. module: odoo_approval_engine
+#: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_request_line__approver_id
+msgid "User who closed this stage (last approval, or the rejecter)."
+msgstr ""
+
+#. module: odoo_approval_engine
+#: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_request_line__candidate_user_ids
+msgid "Users allowed to approve this stage."
+msgstr ""
+
+#. module: odoo_approval_engine
+#: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_request_line__approved_by_ids
+msgid "Users who have approved this stage so far."
+msgstr ""
+
+#. module: odoo_approval_engine
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_inbox_kanban_view
 msgid "View document"
 msgstr ""
@@ -1091,10 +1132,22 @@ msgid "Who must approve"
 msgstr ""
 
 #. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_request_line.py:0
+msgid "You are not an approver for this stage."
+msgstr ""
+
+#. module: odoo_approval_engine
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_decision_wizard_form_view
 msgid ""
 "You are reviewing an approval request. Approve to pass it to\n"
 "                    the next stage, or reject it (a reason is required)."
+msgstr ""
+
+#. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_request_line.py:0
+msgid "You have already approved this stage."
 msgstr ""
 
 #. module: odoo_approval_engine

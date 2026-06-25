@@ -38,7 +38,8 @@ class ApprovalDecisionWizard(models.TransientModel):
             request = self.env["approval.engine.request"].browse(active_id)
             res.setdefault("request_id", request.id)
             pending_line = request.line_ids.filtered(
-                lambda l: l.approver_id == self.env.user and l.decision == "pending"
+                lambda l: l.decision == "pending"
+                and self.env.user in l.with_context(active_test=False).candidate_user_ids
             )
             if pending_line:
                 res.setdefault("line_id", pending_line[0].id)
@@ -51,9 +52,10 @@ class ApprovalDecisionWizard(models.TransientModel):
         if not self.line_id:
             raise UserError(_("No approval step selected."))
         self.line_id._check_can_decide()
+        actor = self.env.user
         # sudo: see approval.engine.request.line.action_quick_approve.
         self.request_id.sudo()._register_decision(
-            self.line_id.sudo(), "approved", self.comment
+            self.line_id.sudo(), "approved", self.comment, actor=actor
         )
         return {"type": "ir.actions.act_window_close"}
 
@@ -65,8 +67,9 @@ class ApprovalDecisionWizard(models.TransientModel):
         self.line_id._check_can_decide()
         if not (self.comment and self.comment.strip()):
             raise UserError(_("Please provide a reason for rejecting this request."))
+        actor = self.env.user
         self.request_id.sudo()._register_decision(
-            self.line_id.sudo(), "rejected", self.comment
+            self.line_id.sudo(), "rejected", self.comment, actor=actor
         )
         return {"type": "ir.actions.act_window_close"}
 

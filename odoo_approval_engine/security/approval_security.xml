@@ -55,7 +55,7 @@
         <field name="domain_force">
             ['|',
                 ('requested_by', '=', user.id),
-                ('line_ids.approver_id', '=', user.id)
+                ('line_ids.candidate_user_ids', 'in', user.id)
             ]
         </field>
         <field name="groups" eval="[(4, ref('base.group_user'))]"/>
@@ -93,7 +93,7 @@
         <field name="domain_force">
             ['|',
                 ('request_id.requested_by', '=', user.id),
-                ('approver_id', '=', user.id)
+                ('candidate_user_ids', 'in', user.id)
             ]
         </field>
         <field name="groups" eval="[(4, ref('base.group_user'))]"/>

@@ -172,24 +172,20 @@ class ApprovalRequest(models.Model):
         return levels[0] if levels else False
 
     def _generate_lines_for_level(self, level_obj):
-        """Create ``approval.engine.request.line`` records for *level_obj*.
-
-        Resolves approvers via the rule's ``_approval_resolve_approvers`` and
-        creates one line per approver at ``level_obj.sequence``.
-        """
+        """Create ONE stage line for *level_obj*, listing its candidate
+        approvers (resolved from the rule level's group / expression)."""
         self.ensure_one()
         source_record = self._get_source_record()
-        approvers = self.rule_id._approval_resolve_approvers(level_obj, record=source_record)
-        Line = self.env["approval.engine.request.line"]
-        for approver in approvers:
-            Line.create(
-                {
-                    "request_id": self.id,
-                    "level": level_obj.sequence,
-                    "approver_id": approver.id,
-                    "decision": "pending",
-                }
-            )
+        candidates = self.rule_id._approval_resolve_approvers(
+            level_obj, record=source_record
+        )
+        return self.env["approval.engine.request.line"].create({
+            "request_id": self.id,
+            "level": level_obj.sequence,
+            "min_approvals": level_obj.min_approvals or 1,
+            "candidate_user_ids": [(6, 0, candidates.ids)],
+            "decision": "pending",
+        })
 
     # --- State machine ------------------------------------------------------
 
@@ -214,7 +210,7 @@ class ApprovalRequest(models.Model):
 
             # Notify level-1 approvers
             approver_lines = request.line_ids.filtered(lambda l: l.level == 1)
-            approvers = approver_lines.mapped("approver_id")
+            approvers = approver_lines.mapped("candidate_user_ids")
             if approvers:
                 request.message_post(
                     body=_("Your approval is required for request %s.") % request.name,
@@ -222,73 +218,75 @@ class ApprovalRequest(models.Model):
                     subtype_xmlid="mail.mt_comment",
                 )
 
-    def _register_decision(self, line, decision, comment=False):
-        """Record an approver decision and advance or finalize the request.
+    def _register_decision(self, line, decision, comment=False, actor=None):
+        """Record a decision on a *stage* line by *actor*.
 
-        :param line: ``approval.engine.request.line`` to record decision on.
-        :param decision: ``'approved'`` or ``'rejected'``.
-        :param comment: optional free-text comment.
+        Approve: the actor is added to ``approved_by_ids``; once the stage has
+        ``min_approvals`` distinct approvals it is cleared and the request
+        advances (or is finalized). Reject: the stage and the request are
+        rejected immediately.
         """
         self.ensure_one()
+        actor = actor or self.env.user
 
         if line.request_id != self:
             raise UserError(_("This line does not belong to the current request."))
-
         if self.state != "pending":
             raise UserError(
                 _("Cannot register a decision on a request that is not pending.")
             )
 
-        # Write decision on the line
-        line.write(
-            {
-                "decision": decision,
+        # --- Rejection: immediate ------------------------------------------
+        if decision == "rejected":
+            line.write({
+                "decision": "rejected",
+                "approver_id": actor.id,
                 "decision_date": fields.Datetime.now(),
                 "comment": comment or False,
-            }
-        )
+            })
+            self.message_post(
+                body=_("%(user)s rejected stage “%(stage)s”.%(comment)s") % {
+                    "user": actor.name,
+                    "stage": line.stage_label,
+                    "comment": (" — " + comment) if comment else "",
+                },
+                subtype_xmlid="mail.mt_note",
+            )
+            self._finalize(approved=False)
+            return
 
-        # Post chatter message
+        # --- Approval ------------------------------------------------------
+        # active_test=False so archived users (incl. the test superuser) are
+        # counted; approvers are normally active so this is a no-op in prod.
+        already = line.with_context(active_test=False).approved_by_ids
+        if actor not in already:
+            line.approved_by_ids = [(4, actor.id)]
+        vals = {"decision_date": fields.Datetime.now()}
+        if comment:
+            vals["comment"] = comment
+        line.write(vals)
         self.message_post(
-            body=_(
-                "%(approver)s %(verb)s level %(level)s.%(comment)s"
-            ) % {
-                "approver": line.approver_id.name,
-                "verb": _("approved") if decision == "approved" else _("rejected"),
-                "level": line.level,
+            body=_("%(user)s approved stage “%(stage)s”.%(comment)s") % {
+                "user": actor.name,
+                "stage": line.stage_label,
                 "comment": (" — " + comment) if comment else "",
             },
             subtype_xmlid="mail.mt_note",
         )
 
-        # Handle rejection immediately
-        if decision == "rejected":
-            self._finalize(approved=False)
-            return
+        # Enough approvals for this stage?
+        approved_count = len(line.with_context(active_test=False).approved_by_ids)
+        if approved_count < (line.min_approvals or 1):
+            return  # stage stays pending, more approvals needed
 
-        # Check if current level has enough approvals
-        level_obj = self._get_level_obj(self.current_level)
-        if not level_obj:
-            # No matching level definition — finalize as approved (safety fallback)
+        line.write({"decision": "approved", "approver_id": actor.id})
+        next_levels = self.rule_id.level_ids.filtered(
+            lambda l: l.sequence > self.current_level
+        ).sorted("sequence")
+        if next_levels:
+            self._advance_level()
+        else:
             self._finalize(approved=True)
-            return
-
-        approved_count = len(
-            self.line_ids.filtered(
-                lambda l: l.level == self.current_level and l.decision == "approved"
-            )
-        )
-
-        if approved_count >= level_obj.min_approvals:
-            # Check if there is a next level
-            next_levels = self.rule_id.level_ids.filtered(
-                lambda l: l.sequence > self.current_level
-            ).sorted("sequence")
-
-            if next_levels:
-                self._advance_level()
-            else:
-                self._finalize(approved=True)
 
     def _advance_level(self):
         """Bump ``current_level`` to the next level and generate its lines."""
@@ -316,7 +314,7 @@ class ApprovalRequest(models.Model):
         approver_lines = self.line_ids.filtered(
             lambda l: l.level == next_level.sequence
         )
-        approvers = approver_lines.mapped("approver_id")
+        approvers = approver_lines.mapped("candidate_user_ids")
         if approvers:
             self.message_post(
                 body=_("Your approval is required for request %s (level %s).")
@@ -376,30 +374,40 @@ class ApprovalRequest(models.Model):
                 subtype_xmlid="mail.mt_note",
             )
 
-    def action_reset_to_pending(self):
-        """Reopen a finished or cancelled request so it can be decided again.
-
-        Works from any state (approved / rejected / cancelled): it restores the
-        current step's lines to 'pending' so approvers can act once more.
+    def action_step_back(self):
+        """Send the request back one stage ("undo"). Press repeatedly to go
+        further back. From a finished/cancelled state it reopens the current
+        (last) stage; from a pending state it returns to the previous stage,
+        dropping any later stages.
         """
         for request in self:
-            level = request._get_level_obj(request.current_level) \
-                or request._get_level_obj(1)
-            if level:
-                request.current_level = level.sequence
-                existing = request.line_ids.filtered(
-                    lambda l: l.level == level.sequence
-                )
-                if existing:
-                    existing.write({
-                        "decision": "pending",
-                        "decision_date": False,
-                        "comment": False,
-                    })
-                else:
-                    request._generate_lines_for_level(level)
-            request.write({"state": "pending"})
+            if request.state in ("approved", "rejected", "cancelled"):
+                target = max(1, request.current_level)
+                request.state = "pending"
+            else:
+                target = max(1, request.current_level - 1)
+
+            # Drop any stage lines after the target.
+            request.line_ids.filtered(lambda l: l.level > target).unlink()
+            request.current_level = target
+
+            tline = request.line_ids.filtered(lambda l: l.level == target)
+            if tline:
+                tline.write({
+                    "decision": "pending",
+                    "decision_date": False,
+                    "comment": False,
+                    "approver_id": False,
+                    "approved_by_ids": [(5, 0, 0)],
+                })
+            else:
+                level = request._get_level_obj(target) or request._get_level_obj(1)
+                if level:
+                    request.current_level = level.sequence
+                    tline = request._generate_lines_for_level(level)
+
             request.message_post(
-                body=_("Request reopened for approval."),
+                body=_("Sent back to stage “%s”.")
+                % (tline.stage_label if tline else target),
                 subtype_xmlid="mail.mt_note",
             )

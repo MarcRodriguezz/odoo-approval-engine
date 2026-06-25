@@ -92,29 +92,24 @@ class TestRequestLifecycle(TransactionCase):
         request.action_submit()
         return request
 
+    def _current_stage(self, request):
+        return request.line_ids.filtered(
+            lambda l: l.level == request.current_level and l.decision == "pending"
+        )[:1]
+
     def _approve_line(self, request, approver, comment=None):
-        """Find the first pending line for *approver* and approve it."""
-        line = request.line_ids.filtered(
-            lambda l: l.approver_id == approver and l.decision == "pending"
-        )
+        """Approve the current pending stage as *approver*."""
+        line = self._current_stage(request)
         if not line:
-            raise AssertionError(
-                "No pending line found for approver %s on request %s"
-                % (approver.name, request.name)
-            )
-        request._register_decision(line[0], "approved", comment=comment)
+            raise AssertionError("No pending stage on request %s" % request.name)
+        request._register_decision(line, "approved", comment=comment, actor=approver)
 
     def _reject_line(self, request, approver, comment=None):
-        """Find the first pending line for *approver* and reject it."""
-        line = request.line_ids.filtered(
-            lambda l: l.approver_id == approver and l.decision == "pending"
-        )
+        """Reject the current pending stage as *approver*."""
+        line = self._current_stage(request)
         if not line:
-            raise AssertionError(
-                "No pending line found for approver %s on request %s"
-                % (approver.name, request.name)
-            )
-        request._register_decision(line[0], "rejected", comment=comment)
+            raise AssertionError("No pending stage on request %s" % request.name)
+        request._register_decision(line, "rejected", comment=comment, actor=approver)
 
     # ------------------------------------------------------------------
     # Tests: action_submit
@@ -315,30 +310,29 @@ class TestRequestLifecycle(TransactionCase):
 
         self.assertEqual(request.state, "pending")
 
-        # Find lines for each approver
-        line_approver1 = request.line_ids.filtered(
-            lambda l: l.approver_id == self.approver
-        )
-        line_approver2 = request.line_ids.filtered(
-            lambda l: l.approver_id == self.approver2
-        )
-
-        self.assertTrue(line_approver1, "Line for approver1 should exist.")
-        self.assertTrue(line_approver2, "Line for approver2 should exist.")
+        # One stage line, needing 2 distinct approvals.
+        stage = request.line_ids.filtered(lambda l: l.level == 1)
+        self.assertEqual(len(stage), 1, "Exactly one stage line expected.")
+        self.assertEqual(stage.min_approvals, 2)
+        self.assertIn(self.approver, stage.candidate_user_ids)
+        self.assertIn(self.approver2, stage.candidate_user_ids)
 
         # First approval — should NOT finalize (min_approvals=2)
-        request._register_decision(line_approver1[0], "approved")
+        request._register_decision(stage, "approved", actor=self.approver)
         self.assertEqual(
-            request.state,
-            "pending",
+            request.state, "pending",
             "Request must remain pending after only 1 of 2 required approvals.",
         )
 
-        # Second approval — should finalize
-        request._register_decision(line_approver2[0], "approved")
+        # Same user approving again must NOT count twice.
+        request._register_decision(stage, "approved", actor=self.approver)
+        self.assertEqual(request.state, "pending",
+                         "Re-approval by the same user must not count.")
+
+        # Second distinct approval — should finalize.
+        request._register_decision(stage, "approved", actor=self.approver2)
         self.assertEqual(
-            request.state,
-            "approved",
+            request.state, "approved",
             "Request should be approved after 2 of 2 required approvals.",
         )
 
@@ -353,30 +347,43 @@ class TestRequestLifecycle(TransactionCase):
         request.action_cancel()
         self.assertEqual(request.state, "cancelled")
 
-    def test_reopen_cancelled_request_can_be_approved(self):
-        """A cancelled request can be reopened and approved again."""
+    def test_step_back_cancelled_request_can_be_approved(self):
+        """A cancelled request can be sent back and approved again."""
         rule = self._make_rule(levels=1)
         request = self._make_pending_request(rule)
         request.action_cancel()
         self.assertEqual(request.state, "cancelled")
 
-        request.action_reset_to_pending()
+        request.action_step_back()
         self.assertEqual(request.state, "pending")
 
         line = request.line_ids.filtered(
             lambda l: l.level == request.current_level and l.decision == "pending"
         )
-        self.assertTrue(line, "Reopened request must have a pending line again.")
+        self.assertTrue(line, "Reopened request must have a pending stage again.")
         request._register_decision(line[0], "approved")
         self.assertEqual(request.state, "approved")
 
-    def test_reopen_approved_request(self):
-        """An already-approved request can be reopened to 'pending'."""
+    def test_step_back_two_levels(self):
+        """Step back returns to the previous stage and drops later ones."""
+        rule = self._make_rule(levels=2)
+        request = self._make_pending_request(rule)
+        # advance to stage 2
+        self._approve_line(request, self.approver)
+        self.assertEqual(request.current_level, 2)
+        # step back -> stage 1, no stage-2 line left
+        request.action_step_back()
+        self.assertEqual(request.current_level, 1)
+        self.assertFalse(request.line_ids.filtered(lambda l: l.level == 2))
+        self.assertEqual(request.state, "pending")
+
+    def test_step_back_approved_request(self):
+        """An already-approved request can be sent back to 'pending'."""
         rule = self._make_rule(levels=1)
         request = self._make_pending_request(rule)
         request._register_decision(request.line_ids[0], "approved")
         self.assertEqual(request.state, "approved")
-        request.action_reset_to_pending()
+        request.action_step_back()
         self.assertEqual(request.state, "pending")
 
     # ------------------------------------------------------------------
