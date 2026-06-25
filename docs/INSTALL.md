@@ -3,6 +3,18 @@
 Technical install/run guide. End-user docs: [README](../README.md). Architecture:
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
+## Run it standalone (no existing Odoo)
+
+A ready-to-run Docker stack lives in [`deploy/`](../deploy/) (Postgres + Odoo 19,
+Community-only, this repo mounted as the addons path):
+
+```bash
+cd deploy && cp .env.example .env && docker compose up -d
+# http://localhost:8069 -> create a DB -> install the modules
+```
+
+See [`deploy/README.md`](../deploy/README.md) for details.
+
 ## Modules
 
 | Module | Depends on | Purpose |

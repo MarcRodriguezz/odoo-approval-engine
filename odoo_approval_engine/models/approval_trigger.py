@@ -29,5 +29,7 @@ class ApprovalEngineTrigger(models.Model):
         "ir.model", string="Model", ondelete="cascade",
         help="Leave empty for a universal trigger (any model).",
     )
-    model_name = fields.Char(related="model_id.model", store=True, index=True)
+    model_name = fields.Char(
+        related="model_id.model", string="Model Name", store=True, index=True,
+    )
     active = fields.Boolean(default=True)

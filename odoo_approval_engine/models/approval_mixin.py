@@ -28,7 +28,7 @@ class ApprovalEngineMixin(models.AbstractModel):
             ("rejected", "Rejected"),
         ],
         compute="_compute_approval_requests",
-        string="Approval State",
+        string="Engine Approval State",
     )
 
     def _compute_approval_requests(self):

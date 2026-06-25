@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e-20260528\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-25 07:35+0000\n"
-"PO-Revision-Date: 2026-06-25 07:35+0000\n"
+"POT-Creation-Date: 2026-06-25 07:42+0000\n"
+"PO-Revision-Date: 2026-06-25 07:42+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -198,11 +198,6 @@ msgstr ""
 #: model:ir.actions.act_window,name:odoo_approval_engine.action_approval_rule
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_rule_list_view
 msgid "Approval Rules"
-msgstr ""
-
-#. module: odoo_approval_engine
-#: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_mixin__approval_engine_state
-msgid "Approval State"
 msgstr ""
 
 #. module: odoo_approval_engine
@@ -478,6 +473,11 @@ msgstr ""
 #. module: odoo_approval_engine
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__approval_engine_request__state__draft
 msgid "Draft"
+msgstr ""
+
+#. module: odoo_approval_engine
+#: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_mixin__approval_engine_state
+msgid "Engine Approval State"
 msgstr ""
 
 #. module: odoo_approval_engine
