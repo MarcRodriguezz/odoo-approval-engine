@@ -386,6 +386,35 @@ class TestRequestLifecycle(TransactionCase):
         request.action_step_back()
         self.assertEqual(request.state, "pending")
 
+    def test_step_back_cycles_never_duplicate_stages(self):
+        """Repeated step-back / re-approve must keep exactly one line per stage."""
+        rule = self._make_rule(levels=2)
+        request = self._make_pending_request(rule)
+        self._approve_line(request, self.approver)   # stage 1 -> stage 2
+        self._approve_line(request, self.approver)   # stage 2 -> approved
+        self.assertEqual(request.state, "approved")
+
+        for _i in range(3):
+            request.action_step_back()
+            request._register_decision(
+                self._current_stage(request), "approved", actor=self.approver
+            )
+
+        self.assertEqual(sorted(request.line_ids.mapped("level")), [1, 2],
+                         "There must be exactly one line per stage.")
+        self.assertEqual(request.state, "approved")
+
+    def test_generate_lines_is_idempotent(self):
+        """Generating a stage twice must not create a duplicate line."""
+        rule = self._make_rule(levels=1)
+        request = self._make_pending_request(rule)
+        level = request._get_level_obj(1)
+        request._generate_lines_for_level(level)
+        request._generate_lines_for_level(level)
+        self.assertEqual(
+            len(request.line_ids.filtered(lambda l: l.level == 1)), 1
+        )
+
     # ------------------------------------------------------------------
     # Tests: decision on non-pending request raises UserError
     # ------------------------------------------------------------------

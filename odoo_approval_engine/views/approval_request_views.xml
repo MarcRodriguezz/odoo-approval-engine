@@ -89,8 +89,6 @@
                                       decoration-danger="decision == 'rejected'"
                                       decoration-warning="decision == 'pending'">
                                     <field name="stage_label" string="Stage"/>
-                                    <field name="candidate_user_ids" widget="many2many_tags"
-                                           string="Can approve"/>
                                     <field name="min_approvals" string="Needs"/>
                                     <field name="approved_by_ids" widget="many2many_tags"
                                            string="Approved by"/>

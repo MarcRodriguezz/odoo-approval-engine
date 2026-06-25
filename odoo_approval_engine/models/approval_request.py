@@ -172,20 +172,33 @@ class ApprovalRequest(models.Model):
         return levels[0] if levels else False
 
     def _generate_lines_for_level(self, level_obj):
-        """Create ONE stage line for *level_obj*, listing its candidate
-        approvers (resolved from the rule level's group / expression)."""
+        """Ensure exactly ONE fresh pending stage line for *level_obj*.
+
+        Idempotent: if a line already exists for this stage it is reset and
+        reused (and any accidental duplicates removed), so the workflow can
+        never accumulate duplicate stage lines.
+        """
         self.ensure_one()
         source_record = self._get_source_record()
         candidates = self.rule_id._approval_resolve_approvers(
             level_obj, record=source_record
         )
-        return self.env["approval.engine.request.line"].create({
-            "request_id": self.id,
-            "level": level_obj.sequence,
+        vals = {
             "min_approvals": level_obj.min_approvals or 1,
             "candidate_user_ids": [(6, 0, candidates.ids)],
+            "approved_by_ids": [(5, 0, 0)],
+            "approver_id": False,
             "decision": "pending",
-        })
+            "decision_date": False,
+            "comment": False,
+        }
+        existing = self.line_ids.filtered(lambda l: l.level == level_obj.sequence)
+        if existing:
+            existing[1:].unlink()  # drop any duplicates
+            existing[0].write(vals)
+            return existing[0]
+        vals.update({"request_id": self.id, "level": level_obj.sequence})
+        return self.env["approval.engine.request.line"].create(vals)
 
     # --- State machine ------------------------------------------------------
 
@@ -387,24 +400,11 @@ class ApprovalRequest(models.Model):
             else:
                 target = max(1, request.current_level - 1)
 
-            # Drop any stage lines after the target.
+            # Drop any stage lines after the target, then (re)build the target.
             request.line_ids.filtered(lambda l: l.level > target).unlink()
-            request.current_level = target
-
-            tline = request.line_ids.filtered(lambda l: l.level == target)
-            if tline:
-                tline.write({
-                    "decision": "pending",
-                    "decision_date": False,
-                    "comment": False,
-                    "approver_id": False,
-                    "approved_by_ids": [(5, 0, 0)],
-                })
-            else:
-                level = request._get_level_obj(target) or request._get_level_obj(1)
-                if level:
-                    request.current_level = level.sequence
-                    tline = request._generate_lines_for_level(level)
+            level = request._get_level_obj(target) or request._get_level_obj(1)
+            request.current_level = level.sequence if level else target
+            tline = request._generate_lines_for_level(level) if level else False
 
             request.message_post(
                 body=_("Sent back to stage “%s”.")
