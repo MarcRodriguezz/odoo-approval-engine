@@ -16,26 +16,21 @@
                     <field name="rule_id" readonly="1"/>
                     <field name="requested_by" readonly="1"/>
                 </group>
-                <group>
-                    <field name="comment"
-                           placeholder="Add a comment (required when rejecting)…"
-                           nolabel="1"/>
-                </group>
+                <separator string="Comment / Reason"/>
+                <field name="comment"
+                       placeholder="Add a comment (required when rejecting)…"/>
                 <footer>
                     <button name="action_approve"
                             string="Approve"
                             type="object"
-                            class="btn-success"
-                            data-hotkey="q"/>
+                            class="btn-success"/>
                     <button name="action_reject"
                             string="Reject"
                             type="object"
-                            class="btn-danger"
-                            data-hotkey="w"/>
+                            class="btn-danger"/>
                     <button string="Cancel"
                             class="btn-secondary"
-                            special="cancel"
-                            data-hotkey="z"/>
+                            special="cancel"/>
                 </footer>
             </form>
         </field>

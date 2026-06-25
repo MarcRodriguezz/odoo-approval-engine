@@ -12,8 +12,7 @@
                        decoration-success="approval_engine_state == 'approved'"
                        decoration-danger="approval_engine_state == 'rejected'"
                        decoration-muted="approval_engine_state == 'none'"
-                       string="Approval"
-                       invisible="approval_engine_state == 'none'"/>
+                       string="Approval"/>
             </xpath>
         </field>
     </record>
