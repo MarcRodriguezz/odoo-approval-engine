@@ -33,10 +33,16 @@
         <field name="arch" type="xml">
             <form string="Approval Request">
                 <header>
+                    <button name="action_decide_current_stage"
+                            string="Review / Decide"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'pending'"
+                            help="Approve or reject the current stage."/>
                     <button name="action_step_back"
                             string="Step back"
                             type="object"
-                            class="btn-primary"
+                            class="btn-secondary"
                             invisible="state == 'draft'"
                             help="Send the request back one stage. Press again to go further back."/>
                     <button name="action_cancel"

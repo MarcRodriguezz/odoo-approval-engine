@@ -450,6 +450,18 @@ class TestRequestLifecycle(TransactionCase):
     # Tests: decision on non-pending request raises UserError
     # ------------------------------------------------------------------
 
+    def test_closed_date_and_duration(self):
+        """closed_date is set on finalize and approval_duration is computed."""
+        rule = self._make_rule(levels=1)
+        request = self._make_pending_request(rule)
+        self.assertFalse(request.closed_date)
+        request._register_decision(request.line_ids[0], "approved")
+        self.assertTrue(request.closed_date)
+        self.assertGreaterEqual(request.approval_duration, 0.0)
+        # reopening clears the closed date
+        request.action_step_back()
+        self.assertFalse(request.closed_date)
+
     def test_decision_on_cancelled_raises(self):
         """_register_decision on a cancelled request must raise UserError."""
         rule = self._make_rule()

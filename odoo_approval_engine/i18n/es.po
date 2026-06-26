@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e-20260528\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-26 10:08+0000\n"
-"PO-Revision-Date: 2026-06-26 10:08+0000\n"
+"POT-Creation-Date: 2026-06-26 10:45+0000\n"
+"PO-Revision-Date: 2026-06-26 10:45+0000\n"
 "Last-Translator: \n"
 "Language: es\n"
 "Language-Team: \n"
@@ -126,6 +126,11 @@ msgid "All Requests"
 msgstr "Todas las solicitudes"
 
 #. module: odoo_approval_engine
+#: model:ir.ui.menu,name:odoo_approval_engine.menu_approval_analysis
+msgid "Analysis"
+msgstr "Análisis"
+
+#. module: odoo_approval_engine
 #: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_request_line__approver_group_id
 msgid ""
 "Any member of this group (incl. implied membership) may approve this stage —"
@@ -183,6 +188,7 @@ msgstr "Etapa de solicitud de aprobación"
 #: model:ir.actions.act_window,name:odoo_approval_engine.action_approval_request
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_mixin__approval_engine_request_ids
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_list_view
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_search_view
 msgid "Approval Requests"
 msgstr "Solicitudes de aprobación"
 
@@ -245,10 +251,22 @@ msgid "Approval stages"
 msgstr "Etapas de aprobación"
 
 #. module: odoo_approval_engine
+#: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request__approval_duration
+msgid "Approval time (hours)"
+msgstr "Tiempo de aprobación (horas)"
+
+#. module: odoo_approval_engine
 #: model:ir.module.category,name:odoo_approval_engine.module_category_approvals
 #: model:res.groups.privilege,name:odoo_approval_engine.privilege_approvals
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_graph_view
 msgid "Approvals"
 msgstr "Aprobaciones"
+
+#. module: odoo_approval_engine
+#: model:ir.actions.act_window,name:odoo_approval_engine.action_approval_analysis
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_pivot_view
+msgid "Approvals Analysis"
+msgstr "Análisis de aprobaciones"
 
 #. module: odoo_approval_engine
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_decision_wizard_form_view
@@ -267,6 +285,7 @@ msgstr "Aprobar"
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__hr_expense__approval_engine_state__approved
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__purchase_order__approval_engine_state__approved
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__sale_order__approval_engine_state__approved
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_search_view
 msgid "Approved"
 msgstr "Aprobado"
 
@@ -329,6 +348,7 @@ msgid "Base"
 msgstr ""
 
 #. module: odoo_approval_engine
+#: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_request__rule_model_id
 #: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_rule__model_id
 msgid "Business document this rule applies to."
 msgstr "Documento de negocio al que se aplica esta regla."
@@ -371,6 +391,11 @@ msgstr "No se puede registrar una decisión en una solicitud que no está pendie
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_rule_form_view
 msgid "Choose a document type…"
 msgstr "Elige un tipo de documento…"
+
+#. module: odoo_approval_engine
+#: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request__closed_date
+msgid "Closed on"
+msgstr "Cerrado el"
 
 #. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_trigger__code
@@ -481,8 +506,15 @@ msgstr "Nombre mostrado"
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_decision_wizard__document
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request_line__source_document
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_form_view
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_search_view
 msgid "Document"
 msgstr "Documento"
+
+#. module: odoo_approval_engine
+#: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request__rule_model_id
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_search_view
+msgid "Document Type"
+msgstr "Tipo de documento"
 
 #. module: odoo_approval_engine
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__approval_engine_request__state__draft
@@ -541,6 +573,11 @@ msgstr "Grupo"
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request__has_message
 msgid "Has Message"
 msgstr "Tiene mensaje"
+
+#. module: odoo_approval_engine
+#: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_request__approval_duration
+msgid "Hours between the request and its final decision."
+msgstr "Horas entre la solicitud y su decisión final."
 
 #. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_decision_wizard__id
@@ -685,6 +722,11 @@ msgid "My Approvals"
 msgstr "Mis aprobaciones"
 
 #. module: odoo_approval_engine
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_search_view
+msgid "My Requests"
+msgstr "Mis solicitudes"
+
+#. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request__name
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_rule__name
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_rule_level__name
@@ -720,6 +762,11 @@ msgstr "Tipo de la siguiente actividad"
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__sale_order__approval_engine_state__none
 msgid "No Approval"
 msgstr "Sin aprobación"
+
+#. module: odoo_approval_engine
+#: model_terms:ir.actions.act_window,help:odoo_approval_engine.action_approval_analysis
+msgid "No approval data yet"
+msgstr "Aún no hay datos de aprobación"
 
 #. module: odoo_approval_engine
 #: model_terms:ir.actions.act_window,help:odoo_approval_engine.action_approval_request
@@ -779,6 +826,13 @@ msgid "On modification"
 msgstr "Al modificar"
 
 #. module: odoo_approval_engine
+#: model_terms:ir.actions.act_window,help:odoo_approval_engine.action_approval_analysis
+msgid ""
+"Once rules start firing, analyse approvals here by document type,\n"
+"                rule, requester or month — and track the average approval time."
+msgstr "Cuando las reglas empiecen a activarse, analiza aquí las aprobaciones por tipo de documento, regla, solicitante o mes, y controla el tiempo medio de aprobación."
+
+#. module: odoo_approval_engine
 #. odoo-python
 #: code:addons/odoo_approval_engine/models/approval_request.py:0
 msgid "Only draft requests can be submitted (request %s is '%s')."
@@ -798,6 +852,7 @@ msgstr "Expresión booleana opcional evaluada con safe_eval. Contexto: record, u
 
 #. module: odoo_approval_engine
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__approval_engine_request_line__decision__pending
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_search_view
 msgid "Pending"
 msgstr "Pendiente"
 
@@ -866,8 +921,14 @@ msgstr "Rechazar"
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__hr_expense__approval_engine_state__rejected
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__purchase_order__approval_engine_state__rejected
 #: model:ir.model.fields.selection,name:odoo_approval_engine.selection__sale_order__approval_engine_state__rejected
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_search_view
 msgid "Rejected"
 msgstr "Rechazado"
+
+#. module: odoo_approval_engine
+#: model:ir.ui.menu,name:odoo_approval_engine.menu_approval_reporting
+msgid "Reporting"
+msgstr "Informes"
 
 #. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_decision_wizard__request_id
@@ -879,6 +940,11 @@ msgstr "Solicitud"
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request__request_date
 msgid "Request Date"
 msgstr "Fecha de solicitud"
+
+#. module: odoo_approval_engine
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_search_view
+msgid "Request Month"
+msgstr "Mes de solicitud"
 
 #. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request_line__request_state
@@ -911,6 +977,7 @@ msgstr "Solicitado por"
 #. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_decision_wizard__requested_by
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request_line__requested_by
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_search_view
 msgid "Requested by"
 msgstr "Solicitado por"
 
@@ -954,6 +1021,7 @@ msgstr "Revisar aprobación"
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request__rule_id
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request_line__rule_id
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_rule_level__rule_id
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_search_view
 msgid "Rule"
 msgstr "Regla"
 
@@ -1033,6 +1101,11 @@ msgid "State"
 msgstr "Estado"
 
 #. module: odoo_approval_engine
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_search_view
+msgid "Status"
+msgstr "Estado"
+
+#. module: odoo_approval_engine
 #: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_request__activity_state
 msgid ""
 "Status based on activities\n"
@@ -1068,6 +1141,17 @@ msgstr "La etapa de aprobación a la que pertenece esta línea."
 #: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_request_line__source_document
 msgid "The business document this approval is about."
 msgstr "El documento de negocio al que se refiere esta aprobación."
+
+#. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_request.py:0
+msgid "There is no pending stage to decide on."
+msgstr "No hay ninguna etapa pendiente que decidir."
+
+#. module: odoo_approval_engine
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_search_view
+msgid "This Month"
+msgstr "Este mes"
 
 #. module: odoo_approval_engine
 #. odoo-python
@@ -1122,6 +1206,11 @@ msgid "View document"
 msgstr "Ver documento"
 
 #. module: odoo_approval_engine
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_search_view
+msgid "Waiting for me"
+msgstr "Esperando mi aprobación"
+
+#. module: odoo_approval_engine
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_inbox_form_view
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_form_view
 msgid "What needs approval"
@@ -1131,6 +1220,11 @@ msgstr "Qué necesita aprobación"
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_rule_form_view
 msgid "When does it apply?"
 msgstr "¿Cuándo se aplica?"
+
+#. module: odoo_approval_engine
+#: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_request__closed_date
+msgid "When the request reached a final state (approved/rejected/cancelled)."
+msgstr "Cuándo la solicitud alcanzó un estado final (aprobada/rechazada/cancelada)."
 
 #. module: odoo_approval_engine
 #: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_rule__trigger_id

@@ -33,6 +33,16 @@ who approved what, when, and why.
 - The chosen approvers get it in **My Approvals**, where they approve or reject with a comment.
 - Once every stage approves, the action runs automatically. Everything is logged.
 
+## Screenshots
+
+| My Approvals (one-click) | Stage-by-stage trace | Reporting dashboard |
+|---|---|---|
+| ![My Approvals](docs/img/inbox.png) | ![Request](docs/img/request.png) | ![Dashboard](docs/img/dashboard.png) |
+
+> Drop your captures into `docs/img/` as `inbox.png`, `request.png`, `dashboard.png`
+> (and an optional `flow.gif`). A ready-to-run stack is in [`deploy/`](deploy/), and a
+> 5-minute walkthrough to record from is in [`docs/DEMO.md`](docs/DEMO.md).
+
 ---
 
 ## Key concepts

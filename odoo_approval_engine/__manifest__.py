@@ -27,6 +27,7 @@ multi-level approval workflows with full chatter/email traceability.
         "views/approval_inbox_views.xml",
         "wizards/approval_decision_wizard_views.xml",
         "views/menus.xml",
+        "views/approval_analysis_views.xml",
     ],
     "installable": True,
     "application": True,

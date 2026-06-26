@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===== Search: filters + group-bys (shared) ===== -->
+    <record id="approval_request_search_view" model="ir.ui.view">
+        <field name="name">approval.engine.request.search</field>
+        <field name="model">approval.engine.request</field>
+        <field name="arch" type="xml">
+            <search string="Approval Requests">
+                <field name="name"/>
+                <field name="rule_id"/>
+                <field name="requested_by"/>
+                <field name="resource_ref" string="Document"/>
+                <filter name="f_pending" string="Pending"
+                        domain="[('state', '=', 'pending')]"/>
+                <filter name="f_waiting_me" string="Waiting for me"
+                        domain="['&amp;', ('state', '=', 'pending'), '|', ('line_ids.approver_group_id.all_user_ids', 'in', uid), ('line_ids.candidate_user_ids', 'in', uid)]"/>
+                <filter name="f_approved" string="Approved"
+                        domain="[('state', '=', 'approved')]"/>
+                <filter name="f_rejected" string="Rejected"
+                        domain="[('state', '=', 'rejected')]"/>
+                <separator/>
+                <filter name="f_this_month" string="This Month"
+                        domain="[('request_date', '&gt;=', (context_today() + relativedelta(day=1)).strftime('%Y-%m-%d'))]"/>
+                <separator/>
+                <filter name="f_mine" string="My Requests"
+                        domain="[('requested_by', '=', uid)]"/>
+                <separator/>
+                <filter name="g_state" string="Status"
+                        context="{'group_by': 'state'}"/>
+                <filter name="g_doc" string="Document Type"
+                        context="{'group_by': 'rule_model_id'}"/>
+                <filter name="g_rule" string="Rule"
+                        context="{'group_by': 'rule_id'}"/>
+                <filter name="g_requester" string="Requested by"
+                        context="{'group_by': 'requested_by'}"/>
+                <filter name="g_month" string="Request Month"
+                        context="{'group_by': 'request_date:month'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- ===== Pivot ===== -->
+    <record id="approval_request_pivot_view" model="ir.ui.view">
+        <field name="name">approval.engine.request.pivot</field>
+        <field name="model">approval.engine.request</field>
+        <field name="arch" type="xml">
+            <pivot string="Approvals Analysis" sample="1">
+                <field name="rule_model_id" type="row"/>
+                <field name="state" type="col"/>
+                <field name="approval_duration" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- ===== Graph ===== -->
+    <record id="approval_request_graph_view" model="ir.ui.view">
+        <field name="name">approval.engine.request.graph</field>
+        <field name="model">approval.engine.request</field>
+        <field name="arch" type="xml">
+            <graph string="Approvals" sample="1" type="bar">
+                <field name="rule_model_id"/>
+                <field name="state"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- ===== Analysis action ===== -->
+    <record id="action_approval_analysis" model="ir.actions.act_window">
+        <field name="name">Approvals Analysis</field>
+        <field name="res_model">approval.engine.request</field>
+        <field name="view_mode">graph,pivot,list,form</field>
+        <field name="search_view_id" ref="approval_request_search_view"/>
+        <field name="context">{'search_default_g_doc': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No approval data yet
+            </p>
+            <p>
+                Once rules start firing, analyse approvals here by document type,
+                rule, requester or month — and track the average approval time.
+            </p>
+        </field>
+    </record>
+
+    <!-- Plug the rich search into "All Requests" too -->
+    <record id="action_approval_request" model="ir.actions.act_window">
+        <field name="search_view_id" ref="approval_request_search_view"/>
+    </record>
+
+    <!-- ===== Reporting menu ===== -->
+    <menuitem id="menu_approval_reporting"
+              name="Reporting"
+              parent="menu_approval_root"
+              sequence="80"
+              groups="group_approval_manager"/>
+    <menuitem id="menu_approval_analysis"
+              name="Analysis"
+              parent="menu_approval_reporting"
+              action="action_approval_analysis"
+              sequence="10"
+              groups="group_approval_manager"/>
+
+</odoo>

@@ -48,6 +48,29 @@ class ApprovalRequest(models.Model):
         "res.company", default=lambda self: self.env.company
     )
 
+    # --- Analytics (dashboard) ---------------------------------------------
+    rule_model_id = fields.Many2one(
+        related="rule_id.model_id", store=True, string="Document Type",
+    )
+    closed_date = fields.Datetime(
+        string="Closed on", readonly=True, copy=False,
+        help="When the request reached a final state (approved/rejected/cancelled).",
+    )
+    approval_duration = fields.Float(
+        string="Approval time (hours)", compute="_compute_approval_duration",
+        store=True, aggregator="avg",
+        help="Hours between the request and its final decision.",
+    )
+
+    @api.depends("request_date", "closed_date")
+    def _compute_approval_duration(self):
+        for rec in self:
+            if rec.request_date and rec.closed_date:
+                delta = rec.closed_date - rec.request_date
+                rec.approval_duration = delta.total_seconds() / 3600.0
+            else:
+                rec.approval_duration = 0.0
+
     @api.model
     def _selection_resource_ref(self):
         models_ = self.env["ir.model"].sudo().search([])
@@ -349,7 +372,7 @@ class ApprovalRequest(models.Model):
         """
         self.ensure_one()
         new_state = "approved" if approved else "rejected"
-        self.write({"state": new_state})
+        self.write({"state": new_state, "closed_date": fields.Datetime.now()})
 
         # Post chatter message
         if approved:
@@ -385,9 +408,23 @@ class ApprovalRequest(models.Model):
             elif not approved and hasattr(source, "_on_approval_rejected"):
                 source._on_approval_rejected()
 
+    def action_decide_current_stage(self):
+        """Open the decision dialog for the current pending stage (so an
+        approver — or a manager — can decide straight from the request)."""
+        self.ensure_one()
+        stage = self.line_ids.filtered(
+            lambda l: l.level == self.current_level and l.decision == "pending"
+        )[:1]
+        if not stage:
+            raise UserError(_("There is no pending stage to decide on."))
+        return stage.action_open_decision_wizard()
+
     def action_cancel(self):
         for request in self:
-            request.write({"state": "cancelled"})
+            request.write({
+                "state": "cancelled",
+                "closed_date": fields.Datetime.now(),
+            })
             request.message_post(
                 body=_("Approval request cancelled."),
                 subtype_xmlid="mail.mt_note",
@@ -402,7 +439,7 @@ class ApprovalRequest(models.Model):
         for request in self:
             if request.state in ("approved", "rejected", "cancelled"):
                 target = max(1, request.current_level)
-                request.state = "pending"
+                request.write({"state": "pending", "closed_date": False})
             else:
                 target = max(1, request.current_level - 1)
 
