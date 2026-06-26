@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Approval Engine — Sale Order Integration",
-    "version": "19.0.2.0.0",
+    "version": "19.0.3.0.0",
     "license": "LGPL-3",
     "category": "Sales",
     "summary": "Wire sale.order into the centralized approval engine",
@@ -10,7 +10,9 @@
         Confirmation of high-value (or rule-matched) orders is held pending
         approval; fully approved requests automatically trigger the real confirm.
     """,
-    "author": "Custom",
+    "author": "Marc Rodriguez",
+    "website": "https://github.com/MarcRodriguezz/odoo-approval-engine",
+    "support": "https://github.com/MarcRodriguezz/odoo-approval-engine/issues",
     "depends": ["odoo_approval_engine", "sale"],
     "data": [
         "data/approval_trigger_sale.xml",

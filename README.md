@@ -177,7 +177,13 @@ Technical docs live in [`docs/`](docs/):
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — data model, engine, generic base hook, the
   integration contract, security, testing.
 - [`docs/INSTALL.md`](docs/INSTALL.md) — install + run the test suite on Odoo 19.
+- [`docs/DEMO.md`](docs/DEMO.md) — a 5-minute walkthrough.
 
 Modules: `odoo_approval_engine` (model-agnostic core) + integrations `odoo_approval_sale`,
 `odoo_approval_purchase`, `odoo_approval_account`, `odoo_approval_expense`. Multilingual
-(English + Spanish). **59 automated tests green on Odoo 19.**
+(English + Spanish). **64 automated tests green on Odoo 19.**
+
+## License
+
+`odoo_approval_engine` is licensed under the **Odoo Proprietary License v1.0 (OPL-1)** — see
+[`LICENSE`](LICENSE). The Sales/Purchase/Invoicing/Expense integration modules are LGPL-3.
