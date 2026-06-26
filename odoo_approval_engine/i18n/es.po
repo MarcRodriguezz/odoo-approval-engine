@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e-20260528\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-25 07:42+0000\n"
-"PO-Revision-Date: 2026-06-25 07:42+0000\n"
+"POT-Creation-Date: 2026-06-26 10:08+0000\n"
+"PO-Revision-Date: 2026-06-26 10:08+0000\n"
 "Last-Translator: \n"
 "Language: es\n"
 "Language-Team: \n"
@@ -124,6 +124,14 @@ msgstr "Avanzado al nivel de aprobación %s."
 #: model:ir.ui.menu,name:odoo_approval_engine.menu_approval_requests
 msgid "All Requests"
 msgstr "Todas las solicitudes"
+
+#. module: odoo_approval_engine
+#: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_request_line__approver_group_id
+msgid ""
+"Any member of this group (incl. implied membership) may approve this stage —"
+" evaluated live, so adding a user to the group lets them approve "
+"immediately."
+msgstr "Cualquier miembro de este grupo (incluida pertenencia implícita) puede aprobar esta etapa — se evalúa en vivo, así que añadir un usuario al grupo le permite aprobar al instante."
 
 #. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_rule__trigger_id
@@ -296,6 +304,11 @@ msgid "Approver expression on level '%s' must return a res.users recordset."
 msgstr "La expresión de aprobador del nivel '%s' debe devolver un conjunto de res.users."
 
 #. module: odoo_approval_engine
+#: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request_line__approver_group_id
+msgid "Approver group"
+msgstr "Grupo aprobador"
+
+#. module: odoo_approval_engine
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_rule_form_view
 msgid "Archived"
 msgstr "Archivado"
@@ -322,7 +335,6 @@ msgstr "Documento de negocio al que se aplica esta regla."
 
 #. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request_line__candidate_user_ids
-#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_form_view
 msgid "Can approve"
 msgstr "Pueden aprobar"
 
@@ -372,6 +384,7 @@ msgstr "Comentario"
 
 #. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_decision_wizard__comment
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_decision_wizard_form_view
 msgid "Comment / Reason"
 msgstr "Comentario / Motivo"
 
@@ -486,6 +499,13 @@ msgstr "Estado de aprobación (motor)"
 #: code:addons/odoo_approval_engine/models/approval_rule.py:0
 msgid "Error evaluating approver expression on level '%s': %s"
 msgstr "Error al evaluar la expresión de aprobador del nivel '%s': %s"
+
+#. module: odoo_approval_engine
+#: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_request_line__candidate_user_ids
+msgid ""
+"Explicit users allowed to approve (used for expression-based approvers; "
+"group approvers are matched live via approver_group_id)."
+msgstr "Usuarios explícitos que pueden aprobar (para aprobadores por expresión; los de grupo se evalúan en vivo vía approver_group_id)."
 
 #. module: odoo_approval_engine
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_rule_form_view
@@ -644,12 +664,12 @@ msgstr "Las aprobaciones mínimas deben ser al menos 1."
 #. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_rule__model_id
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_trigger__model_id
-#: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_trigger__model_name
 msgid "Model"
 msgstr "Modelo"
 
 #. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_rule__model_name
+#: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_trigger__model_name
 msgid "Model Name"
 msgstr "Nombre del modelo"
 
@@ -1090,11 +1110,6 @@ msgstr "Grupo de usuarios"
 #: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_request_line__approver_id
 msgid "User who closed this stage (last approval, or the rejecter)."
 msgstr "Usuario que cerró esta etapa (última aprobación, o quien rechazó)."
-
-#. module: odoo_approval_engine
-#: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_request_line__candidate_user_ids
-msgid "Users allowed to approve this stage."
-msgstr "Usuarios que pueden aprobar esta etapa."
 
 #. module: odoo_approval_engine
 #: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_request_line__approved_by_ids

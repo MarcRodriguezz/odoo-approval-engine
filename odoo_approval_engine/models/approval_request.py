@@ -140,9 +140,9 @@ class ApprovalRequest(models.Model):
             % (record.display_name, rule.name),
             subtype_xmlid="mail.mt_note",
         )
-        approvers = request.line_ids.filtered(lambda l: l.level == 1).mapped(
-            "approver_id"
-        )
+        approvers = request.line_ids.filtered(
+            lambda l: l.level == 1
+        )._effective_candidate_users()
         if approvers:
             request.message_post(
                 body=_("Please review and approve the request: %s") % request.name,
@@ -179,19 +179,25 @@ class ApprovalRequest(models.Model):
         never accumulate duplicate stage lines.
         """
         self.ensure_one()
-        source_record = self._get_source_record()
-        candidates = self.rule_id._approval_resolve_approvers(
-            level_obj, record=source_record
-        )
         vals = {
             "min_approvals": level_obj.min_approvals or 1,
-            "candidate_user_ids": [(6, 0, candidates.ids)],
             "approved_by_ids": [(5, 0, 0)],
             "approver_id": False,
             "decision": "pending",
             "decision_date": False,
             "comment": False,
+            "approver_group_id": False,
+            "candidate_user_ids": [(6, 0, [])],
         }
+        if level_obj.approver_type == "group":
+            # Group membership is matched live (incl. implied) at inbox time.
+            vals["approver_group_id"] = level_obj.approver_group_id.id
+        else:
+            source_record = self._get_source_record()
+            candidates = self.rule_id._approval_resolve_approvers(
+                level_obj, record=source_record
+            )
+            vals["candidate_user_ids"] = [(6, 0, candidates.ids)]
         existing = self.line_ids.filtered(lambda l: l.level == level_obj.sequence)
         if existing:
             existing[1:].unlink()  # drop any duplicates
@@ -223,7 +229,7 @@ class ApprovalRequest(models.Model):
 
             # Notify level-1 approvers
             approver_lines = request.line_ids.filtered(lambda l: l.level == 1)
-            approvers = approver_lines.mapped("candidate_user_ids")
+            approvers = approver_lines._effective_candidate_users()
             if approvers:
                 request.message_post(
                     body=_("Your approval is required for request %s.") % request.name,
@@ -327,7 +333,7 @@ class ApprovalRequest(models.Model):
         approver_lines = self.line_ids.filtered(
             lambda l: l.level == next_level.sequence
         )
-        approvers = approver_lines.mapped("candidate_user_ids")
+        approvers = approver_lines._effective_candidate_users()
         if approvers:
             self.message_post(
                 body=_("Your approval is required for request %s (level %s).")

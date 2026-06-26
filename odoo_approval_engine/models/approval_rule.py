@@ -173,9 +173,9 @@ class ApprovalRule(models.Model):
         env = self.env
 
         if level.approver_type == "group":
-            # Odoo 19: res.groups explicit members are exposed via user_ids
-            # (renamed from `users`). Implied-group membership is phase 2.
-            return level.approver_group_id.user_ids if level.approver_group_id else env["res.users"]
+            # all_user_ids = explicit + implied members (anyone who effectively
+            # has the group). Odoo 19 renamed `users` -> user_ids/all_user_ids.
+            return level.approver_group_id.all_user_ids if level.approver_group_id else env["res.users"]
 
         if level.approver_type == "expression":
             if not level.approver_expression:

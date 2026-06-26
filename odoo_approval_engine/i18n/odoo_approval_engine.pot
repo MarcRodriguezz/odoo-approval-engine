@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e-20260528\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-25 07:42+0000\n"
-"PO-Revision-Date: 2026-06-25 07:42+0000\n"
+"POT-Creation-Date: 2026-06-26 10:08+0000\n"
+"PO-Revision-Date: 2026-06-26 10:08+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -122,6 +122,14 @@ msgstr ""
 #. module: odoo_approval_engine
 #: model:ir.ui.menu,name:odoo_approval_engine.menu_approval_requests
 msgid "All Requests"
+msgstr ""
+
+#. module: odoo_approval_engine
+#: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_request_line__approver_group_id
+msgid ""
+"Any member of this group (incl. implied membership) may approve this stage —"
+" evaluated live, so adding a user to the group lets them approve "
+"immediately."
 msgstr ""
 
 #. module: odoo_approval_engine
@@ -295,6 +303,11 @@ msgid "Approver expression on level '%s' must return a res.users recordset."
 msgstr ""
 
 #. module: odoo_approval_engine
+#: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request_line__approver_group_id
+msgid "Approver group"
+msgstr ""
+
+#. module: odoo_approval_engine
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_rule_form_view
 msgid "Archived"
 msgstr ""
@@ -321,7 +334,6 @@ msgstr ""
 
 #. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request_line__candidate_user_ids
-#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_form_view
 msgid "Can approve"
 msgstr ""
 
@@ -371,6 +383,7 @@ msgstr ""
 
 #. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_decision_wizard__comment
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_decision_wizard_form_view
 msgid "Comment / Reason"
 msgstr ""
 
@@ -484,6 +497,13 @@ msgstr ""
 #. odoo-python
 #: code:addons/odoo_approval_engine/models/approval_rule.py:0
 msgid "Error evaluating approver expression on level '%s': %s"
+msgstr ""
+
+#. module: odoo_approval_engine
+#: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_request_line__candidate_user_ids
+msgid ""
+"Explicit users allowed to approve (used for expression-based approvers; "
+"group approvers are matched live via approver_group_id)."
 msgstr ""
 
 #. module: odoo_approval_engine
@@ -643,12 +663,12 @@ msgstr ""
 #. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_rule__model_id
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_trigger__model_id
-#: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_trigger__model_name
 msgid "Model"
 msgstr ""
 
 #. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_rule__model_name
+#: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_trigger__model_name
 msgid "Model Name"
 msgstr ""
 
@@ -1088,11 +1108,6 @@ msgstr ""
 #. module: odoo_approval_engine
 #: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_request_line__approver_id
 msgid "User who closed this stage (last approval, or the rejecter)."
-msgstr ""
-
-#. module: odoo_approval_engine
-#: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_request_line__candidate_user_ids
-msgid "Users allowed to approve this stage."
 msgstr ""
 
 #. module: odoo_approval_engine

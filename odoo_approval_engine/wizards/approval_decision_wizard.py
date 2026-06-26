@@ -39,7 +39,7 @@ class ApprovalDecisionWizard(models.TransientModel):
             res.setdefault("request_id", request.id)
             pending_line = request.line_ids.filtered(
                 lambda l: l.decision == "pending"
-                and self.env.user in l.with_context(active_test=False).candidate_user_ids
+                and self.env.user in l._effective_candidate_users()
             )
             if pending_line:
                 res.setdefault("line_id", pending_line[0].id)

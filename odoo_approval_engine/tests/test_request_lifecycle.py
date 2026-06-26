@@ -314,8 +314,10 @@ class TestRequestLifecycle(TransactionCase):
         stage = request.line_ids.filtered(lambda l: l.level == 1)
         self.assertEqual(len(stage), 1, "Exactly one stage line expected.")
         self.assertEqual(stage.min_approvals, 2)
-        self.assertIn(self.approver, stage.candidate_user_ids)
-        self.assertIn(self.approver2, stage.candidate_user_ids)
+        # Group approvers are matched live (not snapshotted as candidates).
+        self.assertEqual(stage.approver_group_id, group2)
+        self.assertIn(self.approver, stage._effective_candidate_users())
+        self.assertIn(self.approver2, stage._effective_candidate_users())
 
         # First approval — should NOT finalize (min_approvals=2)
         request._register_decision(stage, "approved", actor=self.approver)
@@ -339,6 +341,35 @@ class TestRequestLifecycle(TransactionCase):
     # ------------------------------------------------------------------
     # Tests: action_cancel
     # ------------------------------------------------------------------
+
+    def test_group_membership_is_live(self):
+        """Any current member of the stage's group can approve — including a
+        user added to the group *after* the request was created."""
+        group = self.env["res.groups"].create({"name": "Live Approvers"})
+        rule = self.env["approval.engine.rule"].create({
+            "name": "Live group rule",
+            "model_id": self.model_partner.id,
+            "trigger_event": "on_confirm",
+            "level_ids": [(0, 0, {
+                "sequence": 1, "name": "S1", "approver_type": "group",
+                "approver_group_id": group.id, "min_approvals": 1,
+            })],
+        })
+        request = self._make_draft_request(rule)
+        request.action_submit()
+        stage = request.line_ids[:1]
+        self.assertEqual(stage.approver_group_id, group)
+
+        newbie = self.env["res.users"].create({
+            "name": "Newbie", "login": "newbie_live@test.local",
+            "group_ids": [(4, self.env.ref("base.group_user").id)],
+        })
+        self.assertNotIn(newbie, stage._effective_candidate_users())
+
+        # Add the user to the approver group -> they can approve immediately.
+        newbie.group_ids = [(4, group.id)]
+        stage.invalidate_recordset()
+        self.assertIn(newbie, stage._effective_candidate_users())
 
     def test_action_cancel(self):
         """action_cancel sets state to 'cancelled'."""

@@ -21,10 +21,17 @@ class ApprovalRequestLine(models.Model):
     )
     level = fields.Integer(string="Stage Order", required=True, default=1)
     min_approvals = fields.Integer(string="Required Approvals", default=1)
+    approver_group_id = fields.Many2one(
+        "res.groups", string="Approver group",
+        help="Any member of this group (incl. implied membership) may approve "
+        "this stage — evaluated live, so adding a user to the group lets them "
+        "approve immediately.",
+    )
     candidate_user_ids = fields.Many2many(
         "res.users", "approval_line_candidate_rel", "line_id", "user_id",
         string="Can approve",
-        help="Users allowed to approve this stage.",
+        help="Explicit users allowed to approve (used for expression-based "
+        "approvers; group approvers are matched live via approver_group_id).",
     )
     approved_by_ids = fields.Many2many(
         "res.users", "approval_line_approved_rel", "line_id", "user_id",
@@ -79,19 +86,29 @@ class ApprovalRequestLine(models.Model):
             line.stage_label = (lvl.name if lvl and lvl.name
                                 else _("Stage %s") % line.level)
 
+    # --- Candidate resolution (live) ---------------------------------------
+    def _effective_candidate_users(self):
+        """Users who may currently approve these stages: live members of the
+        approver group (explicit + implied) plus any explicit candidates."""
+        users = self.env["res.users"]
+        for line in self:
+            line = line.with_context(active_test=False)
+            users |= line.candidate_user_ids
+            if line.approver_group_id:
+                users |= line.approver_group_id.all_user_ids
+        return users
+
     # --- Permission helper --------------------------------------------------
     def _check_can_decide(self):
-        """Only a candidate of this stage (who hasn't approved yet) or an
-        Approvals Manager may decide."""
+        """Only someone who may currently approve this stage (or an Approvals
+        Manager) may decide."""
         self.ensure_one()
         user = self.env.user
-        is_manager = user.has_group("odoo_approval_engine.group_approval_manager")
-        if is_manager:
+        if user.has_group("odoo_approval_engine.group_approval_manager"):
             return
-        line = self.with_context(active_test=False)
-        if user not in line.candidate_user_ids:
+        if user not in self._effective_candidate_users():
             raise UserError(_("You are not an approver for this stage."))
-        if user in line.approved_by_ids:
+        if user in self.with_context(active_test=False).approved_by_ids:
             raise UserError(_("You have already approved this stage."))
 
     # --- One-click inbox actions -------------------------------------------
