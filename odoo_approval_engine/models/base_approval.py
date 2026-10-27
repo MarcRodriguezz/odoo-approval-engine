@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from odoo import api, models
 
+from .approval_mixin import approval_bypassed
+
 
 class Base(models.AbstractModel):
     """Global hook so that on_create / on_write approval rules work on ANY
@@ -25,14 +27,14 @@ class Base(models.AbstractModel):
         return res
 
     def _approval_engine_trigger(self, trigger_event):
-        # Don't run during install/upgrade, on the engine's own models, or when
-        # explicitly bypassed.
+        # Don't run during install/upgrade, on the engine's own models, or while
+        # the engine itself runs an approved action.
         if not self or not self.env.registry.ready:
             return
         if self._name.startswith("approval.engine") \
                 or self._name == "approval.decision.wizard":
             return
-        if self.env.context.get("approval_bypass"):
+        if approval_bypassed(self.env):
             return
         Rule = self.env["approval.engine.rule"].sudo()
         # Cheap O(1) skip for the vast majority of models (no rules).

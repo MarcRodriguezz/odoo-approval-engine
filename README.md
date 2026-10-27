@@ -187,7 +187,7 @@ Technical docs live in [`docs/`](docs/):
 
 Modules: `odoo_approval_engine` (model-agnostic core) + integrations `odoo_approval_sale`,
 `odoo_approval_purchase`, `odoo_approval_account`, `odoo_approval_expense`. Multilingual
-(English + Spanish). **87 automated tests green on Odoo 19.**
+(English + Spanish). **91 automated tests green on Odoo 19.**
 
 **Security in short:** requests are read-only for regular users and every decision is checked
 server-side, so nobody can approve their own request; Python conditions are restricted to

@@ -266,6 +266,19 @@ class TestSaleIntegration(TransactionCase):
         self.assertEqual(order.approval_engine_state, "none")
 
     # ------------------------------------------------------------------
+    # Test 3b: the bypass flag cannot be forged from an RPC context
+    # ------------------------------------------------------------------
+    def test_forged_bypass_context_does_not_skip_approval(self):
+        """A client can send any JSON in the context of an RPC call; sending
+        ``approval_bypass`` must not confirm a high-value order."""
+        order = self._make_order(unit_price=15000.0)
+        for forged in (True, 1, "1", "true"):
+            order.with_context(approval_bypass=forged).action_confirm()
+            self.assertNotEqual(order.state, "sale",
+                                "approval_bypass=%r must not skip approval." % (forged,))
+        self.assertEqual(order.approval_engine_state, "pending")
+
+    # ------------------------------------------------------------------
     # Test 4: batch confirmation only holds the orders that need approval
     # ------------------------------------------------------------------
     def test_batch_confirm_holds_only_orders_needing_approval(self):

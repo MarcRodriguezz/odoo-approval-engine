@@ -39,5 +39,7 @@ docker compose exec odoo odoo -d test_db \
 
 - The repository root is mounted at `/mnt/extra-addons`; non-module folders
   (`docs/`, `deploy/`, `.git/`) are ignored by Odoo.
-- Change `admin_passwd` in `odoo.conf` before exposing the instance.
-- Ports: `8069` (web), `8072` (websocket).
+- Ports `8069` (web) and `8072` (websocket) are bound to `localhost` only.
+- Before exposing the instance: change `admin_passwd`, set `list_db = False` in
+  `odoo.conf`, set a strong `POSTGRES_PASSWORD` in `.env`, and serve it behind
+  an HTTPS reverse proxy.

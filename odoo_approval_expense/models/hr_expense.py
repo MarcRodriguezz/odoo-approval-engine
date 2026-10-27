@@ -7,7 +7,7 @@ class HrExpense(models.Model):
     _inherit = ["hr.expense", "approval.engine.mixin"]
 
     def action_submit(self):
-        if self.env.context.get("approval_bypass"):
+        if self._approval_is_bypassed():
             return super().action_submit()
         blocked = self._approval_split_blocked("on_submit")
         if not blocked:
@@ -18,4 +18,4 @@ class HrExpense(models.Model):
         return blocked._approval_block_action(done=to_submit)
 
     def _on_approval_approved(self):
-        return self.with_context(approval_bypass=True).action_submit()
+        return self._approval_bypass().action_submit()

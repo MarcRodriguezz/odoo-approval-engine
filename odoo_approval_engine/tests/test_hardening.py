@@ -179,6 +179,19 @@ class TestApprovalHardening(TransactionCase):
         rule = self._make_rule(condition_python="record.name == 'Someone else'")
         self.assertFalse(rule._match_record(self.partner))
 
+    # --- Bypass flag ---------------------------------------------------------
+
+    def test_forged_bypass_context_does_not_skip_on_create_rule(self):
+        """The generic create hook ignores an ``approval_bypass`` value sent by
+        a client; only the engine's own (secret) value skips evaluation."""
+        self._make_rule(trigger_event="on_create")
+        partner = self.env["res.partner"].with_context(approval_bypass=True).create(
+            {"name": "Forged Bypass Partner"}
+        )
+        self.assertTrue(self.env["approval.engine.request"].search([
+            ("res_model", "=", "res.partner"), ("res_id", "=", partner.id),
+        ]))
+
     # --- Multi-company --------------------------------------------------------
 
     def test_rules_respect_company(self):

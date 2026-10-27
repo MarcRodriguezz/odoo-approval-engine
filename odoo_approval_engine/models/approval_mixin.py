@@ -1,5 +1,17 @@
 # -*- coding: utf-8 -*-
+import secrets
+
 from odoo import models, fields, _
+
+# Value of the ``approval_bypass`` context key that lets the engine run a held
+# action after approval. A per-process secret instead of ``True``: a client can
+# put any JSON value in the context of an RPC call, but cannot guess this one.
+APPROVAL_BYPASS_TOKEN = secrets.token_urlsafe(32)
+
+
+def approval_bypassed(env):
+    """True when the current call was started by the engine itself."""
+    return env.context.get("approval_bypass") == APPROVAL_BYPASS_TOKEN
 
 
 class ApprovalEngineMixin(models.AbstractModel):
@@ -70,6 +82,16 @@ class ApprovalEngineMixin(models.AbstractModel):
 
     def _approval_create_request(self, rule):
         return self.env["approval.engine.request"]._create_request_for(self, rule)
+
+    # --- Bypass flag used to run the held action after approval ------------
+    def _approval_is_bypassed(self):
+        """True when the engine is running the action after approval; gated
+        methods then call ``super()`` without re-evaluating the rules."""
+        return approval_bypassed(self.env)
+
+    def _approval_bypass(self):
+        """Return ``self`` in the context that runs the gated action for real."""
+        return self.with_context(approval_bypass=APPROVAL_BYPASS_TOKEN)
 
     # --- Source-record hooks (overridden by integration modules) ------------
     def _on_approval_approved(self):

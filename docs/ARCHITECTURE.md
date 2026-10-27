@@ -98,8 +98,8 @@ decision (inbox / wizard) ─▶ line._check_can_decide()   (candidate approver 
 - **Batch actions.** `_approval_split_blocked(event)` returns only the records that need
   approval; integrations run the real action on the others and show a notification listing the
   held documents.
-- **Held action.** `_on_approval_approved()` re-runs the gated method with the
-  `approval_bypass` context flag, under `sudo()` — the approval itself is the authorization.
+- **Held action.** `_on_approval_approved()` re-runs the gated method in the engine's bypass
+  context (`_approval_bypass()`), under `sudo()` — the approval itself is the authorization.
 - **Stages are idempotent.** `_generate_lines_for_level()` resets and reuses the stage line, so
   step-back / re-approve cycles never duplicate lines.
 - **Step back** (managers): from `pending` go back one stage; from `rejected` / `cancelled`
@@ -119,7 +119,7 @@ class SaleOrder(models.Model):
     _inherit = ["sale.order", "approval.engine.mixin"]
 
     def action_confirm(self):
-        if self.env.context.get("approval_bypass"):
+        if self._approval_is_bypassed():
             return super().action_confirm()
         blocked = self._approval_split_blocked("on_confirm")
         if not blocked:
@@ -130,14 +130,14 @@ class SaleOrder(models.Model):
         return blocked._approval_block_action(done=to_confirm)
 
     def _on_approval_approved(self):
-        return self.with_context(approval_bypass=True).action_confirm()
+        return self._approval_bypass().action_confirm()
 ```
 
 | Module | Model | Gated method | Trigger |
 |---|---|---|---|
 | `odoo_approval_sale` | `sale.order` | `action_confirm` | `on_confirm` |
 | `odoo_approval_purchase` | `purchase.order` | `button_confirm` | `on_confirm` |
-| `odoo_approval_account` | `account.move` | `action_post` | `on_post` |
+| `odoo_approval_account` | `account.move` | `action_post`, plus the auto-post cron and the *Post entries* list action | `on_post` |
 | `odoo_approval_expense` | `hr.expense` | `action_submit` | `on_submit` |
 
 The mixin also exposes `approval_engine_state` / `approval_engine_request_ids` for list and form
@@ -146,8 +146,8 @@ badges, computed with **one query per recordset**.
 ### 4.2 Any model: create / write hook (`models/base_approval.py`)
 
 `base.create()` / `base.write()` call `_approval_engine_trigger(event)`, which returns immediately
-unless the registry is ready, the model is not one of the engine's own, `approval_bypass` is not
-set, and the model has at least one active rule for the event. That last check uses an
+unless the registry is ready, the model is not one of the engine's own, the engine is not itself
+running an approved action, and the model has at least one active rule for the event. That last check uses an
 `ormcache` that is cleared whenever a rule changes, so the hook costs almost nothing on models
 without rules.
 
@@ -169,6 +169,12 @@ without rules.
   wizard cannot re-decide a closed stage and skip the next approvers.
 - **Python code is admin-only.** Expressions are evaluated with superuser rights, so — like
   server actions — they are restricted to `base.group_system` via field `groups`.
+- **The bypass flag cannot be forged.** The engine runs an approved action with
+  `approval_bypass` set to a per-process random token, not `True`: a client can send any JSON in
+  the context of an RPC call, but cannot produce that value.
+- **Every posting path is gated for invoices**: the *Post* button, the *Post entries* list action
+  and the auto-post cron. Entries held from the cron leave the auto-post queue and are posted by
+  the engine once approved.
 - **Rules fail closed.** Domains and Python are validated when a rule is saved. If a condition
   still fails at runtime (e.g. a field was removed later), the error is logged and the document
   is **held for approval** rather than silently let through.
@@ -192,12 +198,12 @@ without rules.
 
 ## 7. Tests
 
-87 `TransactionCase` tests tagged `approval` (engine 75, sale 6, purchase 2, invoicing 2,
+91 `TransactionCase` tests tagged `approval` (engine 76, sale 7, purchase 2, invoicing 4,
 expenses 2), run in CI on Odoo 19 + PostgreSQL 16:
 
 | Area | Covered |
 |---|---|
 | Rules | domain / Python matching, validation on save, fail-closed evaluation, approver resolution |
 | Lifecycle | submit, single / multi-stage approve, reject, `min_approvals`, live group membership, step back, cancel, idempotent stages, stale-stage protection |
-| Security | record visibility, read-only requests and lines, no self-approval, admin-only Python, who may step back / cancel, multi-company rules |
-| Integrations | each gated action is held and then executed on approval; batch actions hold only what needs approval |
+| Security | record visibility, read-only requests and lines, no self-approval, admin-only Python, unforgeable bypass flag, who may step back / cancel, multi-company rules |
+| Integrations | each gated action is held and then executed on approval; batch actions hold only what needs approval; invoices cannot skip approval through auto-post or *Post entries* |

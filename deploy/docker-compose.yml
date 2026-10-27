@@ -32,9 +32,11 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # Bound to localhost: this is a demo/dev stack. Put a reverse proxy in
+    # front (and change admin_passwd / list_db in odoo.conf) before exposing it.
     ports:
-      - "8069:8069"   # web
-      - "8072:8072"   # websocket (live notifications)
+      - "127.0.0.1:8069:8069"   # web
+      - "127.0.0.1:8072:8072"   # websocket (live notifications)
     environment:
       HOST: db
       PORT: 5432
