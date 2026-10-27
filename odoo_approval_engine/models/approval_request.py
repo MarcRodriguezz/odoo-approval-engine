@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
-
 from odoo import models, fields, api, _
-from odoo.exceptions import UserError
-from odoo.tools.safe_eval import safe_eval
+from odoo.exceptions import AccessError, UserError
 
 
 class ApprovalRequest(models.Model):
@@ -12,6 +8,9 @@ class ApprovalRequest(models.Model):
     _description = "Approval Request"
     _inherit = ["mail.thread", "mail.activity.mixin"]
     _order = "request_date desc, id desc"
+    # Requests are read-only for regular users (the engine writes them with
+    # sudo), but anyone who can see a request may discuss it in the chatter.
+    _mail_post_access = "read"
 
     name = fields.Char(
         default="/", required=True, copy=False, readonly=True, index=True
@@ -104,30 +103,19 @@ class ApprovalRequest(models.Model):
         """
         record.ensure_one()
         Rule = self.env["approval.engine.rule"].sudo()
-        rules = Rule.search(
-            [
-                ("model_name", "=", record._name),
-                ("trigger_event", "=", trigger_event),
-                ("active", "=", True),
-            ],
-            order="sequence, id",
-        )
-        ctx = {
-            "record": record,
-            "user": self.env.user,
-            "datetime": datetime,
-            "relativedelta": relativedelta,
-        }
+        domain = [
+            ("model_name", "=", record._name),
+            ("trigger_event", "=", trigger_event),
+            ("active", "=", True),
+        ]
+        company = self._record_company(record)
+        if company:
+            # Company-less rules apply everywhere; others only to their company.
+            domain.append(("company_id", "in", [False, company.id]))
+        rules = Rule.search(domain, order="sequence, id")
         for rule in rules:
             if not rule._match_record(record):
                 continue
-            if rule.condition_python:
-                try:
-                    matched = bool(safe_eval(rule.condition_python, dict(ctx)))
-                except Exception:
-                    matched = False
-                if not matched:
-                    continue
             existing = self.sudo().search(
                 [
                     ("res_model", "=", record._name),
@@ -154,13 +142,14 @@ class ApprovalRequest(models.Model):
             "state": "pending",
             "current_level": 1,
             "requested_by": self.env.user.id,
+            "company_id": (self._record_company(record) or self.env.company).id,
         })
         level_1 = rule.level_ids.filtered(lambda l: l.sequence == 1)
         if level_1:
             request._generate_lines_for_level(level_1[0])
         request.message_post(
-            body=_("Approval request created for %s (rule: %s).")
-            % (record.display_name, rule.name),
+            body=_("Approval request created for %(document)s (rule: %(rule)s).",
+                   document=record.display_name, rule=rule.name),
             subtype_xmlid="mail.mt_note",
         )
         approvers = request.line_ids.filtered(
@@ -168,13 +157,25 @@ class ApprovalRequest(models.Model):
         )._effective_candidate_users()
         if approvers:
             request.message_post(
-                body=_("Please review and approve the request: %s") % request.name,
+                body=_("Please review and approve the request: %s", request.name),
                 partner_ids=approvers.mapped("partner_id").ids,
                 subtype_xmlid="mail.mt_comment",
             )
         return request
 
     # --- Private helpers ----------------------------------------------------
+
+    @api.model
+    def _record_company(self, record):
+        """Company of *record* if its model is company-aware, else empty."""
+        if "company_id" in record._fields and record._fields["company_id"].comodel_name == "res.company":
+            return record.sudo().company_id
+        return self.env["res.company"]
+
+    def _check_is_manager(self):
+        if not (self.env.su or self.env.user.has_group(
+                "odoo_approval_engine.group_approval_manager")):
+            raise AccessError(_("Only Approvals Managers can do this."))
 
     def _get_source_record(self):
         """Return the source record (governed model instance) or False."""
@@ -236,8 +237,8 @@ class ApprovalRequest(models.Model):
         for request in self:
             if request.state != "draft":
                 raise UserError(
-                    _("Only draft requests can be submitted (request %s is '%s').")
-                    % (request.name, request.state)
+                    _("Only draft requests can be submitted (request %(name)s is '%(state)s').",
+                      name=request.name, state=request.state)
                 )
             request.write({"state": "pending", "current_level": 1})
 
@@ -255,7 +256,7 @@ class ApprovalRequest(models.Model):
             approvers = approver_lines._effective_candidate_users()
             if approvers:
                 request.message_post(
-                    body=_("Your approval is required for request %s.") % request.name,
+                    body=_("Your approval is required for request %s.", request.name),
                     partner_ids=approvers.mapped("partner_id").ids,
                     subtype_xmlid="mail.mt_comment",
                 )
@@ -292,11 +293,9 @@ class ApprovalRequest(models.Model):
                 "comment": comment or False,
             })
             self.message_post(
-                body=_("%(user)s rejected stage “%(stage)s”.%(comment)s") % {
-                    "user": actor.name,
-                    "stage": line.stage_label,
-                    "comment": (" — " + comment) if comment else "",
-                },
+                body=_("%(user)s rejected stage “%(stage)s”.%(comment)s",
+                       user=actor.name, stage=line.stage_label,
+                       comment=(" — " + comment) if comment else ""),
                 subtype_xmlid="mail.mt_note",
             )
             self._finalize(approved=False)
@@ -313,11 +312,9 @@ class ApprovalRequest(models.Model):
             vals["comment"] = comment
         line.write(vals)
         self.message_post(
-            body=_("%(user)s approved stage “%(stage)s”.%(comment)s") % {
-                "user": actor.name,
-                "stage": line.stage_label,
-                "comment": (" — " + comment) if comment else "",
-            },
+            body=_("%(user)s approved stage “%(stage)s”.%(comment)s",
+                   user=actor.name, stage=line.stage_label,
+                   comment=(" — " + comment) if comment else ""),
             subtype_xmlid="mail.mt_note",
         )
 
@@ -353,7 +350,7 @@ class ApprovalRequest(models.Model):
         self._generate_lines_for_level(next_level)
 
         self.message_post(
-            body=_("Advanced to approval level %s.") % next_level.sequence,
+            body=_("Advanced to approval level %s.", next_level.sequence),
             subtype_xmlid="mail.mt_note",
         )
 
@@ -364,8 +361,8 @@ class ApprovalRequest(models.Model):
         approvers = approver_lines._effective_candidate_users()
         if approvers:
             self.message_post(
-                body=_("Your approval is required for request %s (level %s).")
-                % (self.name, next_level.sequence),
+                body=_("Your approval is required for request %(name)s (level %(level)s).",
+                       name=self.name, level=next_level.sequence),
                 partner_ids=approvers.mapped("partner_id").ids,
                 subtype_xmlid="mail.mt_comment",
             )
@@ -393,10 +390,13 @@ class ApprovalRequest(models.Model):
 
         # Notify requester
         if self.requested_by and self.requested_by.partner_id:
+            body = (
+                _("Your approval request %s has been approved.", self.name)
+                if approved
+                else _("Your approval request %s has been rejected.", self.name)
+            )
             self.message_post(
-                body=_(
-                    "Your approval request %s has been %s."
-                ) % (self.name, _("approved") if approved else _("rejected")),
+                body=body,
                 partner_ids=[self.requested_by.partner_id.id],
                 subtype_xmlid="mail.mt_comment",
             )
@@ -425,24 +425,48 @@ class ApprovalRequest(models.Model):
         return stage.action_open_decision_wizard()
 
     def action_cancel(self):
+        """Withdraw an open request. Managers may cancel any open request; the
+        requester may withdraw their own. Approved requests cannot be
+        cancelled: their held action has already run."""
+        is_manager = self.env.su or self.env.user.has_group(
+            "odoo_approval_engine.group_approval_manager"
+        )
         for request in self:
-            request.write({
+            if request.state not in ("draft", "pending"):
+                raise UserError(
+                    _("Only open requests can be cancelled (request %(name)s is '%(state)s').",
+                      name=request.name, state=request.state)
+                )
+            if not is_manager and request.requested_by != self.env.user:
+                raise AccessError(
+                    _("Only the requester or an Approvals Manager can cancel request %s.",
+                      request.name)
+                )
+            # sudo: the requester has no write access on requests.
+            request.sudo().write({
                 "state": "cancelled",
                 "closed_date": fields.Datetime.now(),
             })
             request.message_post(
-                body=_("Approval request cancelled."),
+                body=_("Approval request cancelled by %s.", self.env.user.name),
                 subtype_xmlid="mail.mt_note",
             )
 
     def action_step_back(self):
         """Send the request back one stage ("undo"). Press repeatedly to go
-        further back. From a finished/cancelled state it reopens the current
+        further back. From a rejected/cancelled state it reopens the current
         (last) stage; from a pending state it returns to the previous stage,
-        dropping any later stages.
+        dropping any later stages. Managers only; approved requests cannot be
+        reopened because their held action has already run.
         """
+        self._check_is_manager()
         for request in self:
-            if request.state in ("approved", "rejected", "cancelled"):
+            if request.state == "approved":
+                raise UserError(
+                    _("Request %s is already approved and its action has run; "
+                      "it cannot be reopened.", request.name)
+                )
+            if request.state in ("rejected", "cancelled"):
                 target = max(1, request.current_level)
                 request.write({"state": "pending", "closed_date": False})
             else:
@@ -455,7 +479,6 @@ class ApprovalRequest(models.Model):
             tline = request._generate_lines_for_level(level) if level else False
 
             request.message_post(
-                body=_("Sent back to stage “%s”.")
-                % (tline.stage_label if tline else target),
+                body=_("Sent back to stage “%s”.", tline.stage_label if tline else target),
                 subtype_xmlid="mail.mt_note",
             )

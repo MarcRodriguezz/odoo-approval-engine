@@ -34,19 +34,24 @@ class ApprovalEngineMixin(models.AbstractModel):
     def _compute_approval_requests(self):
         # sudo: display-only field; any user who can see the record can compute
         # it. The approval.engine.request views still enforce their own rules.
+        # One query for the whole recordset (list views show this column).
         Request = self.env["approval.engine.request"].sudo()
+        ids = [rid for rid in self._origin.ids if rid]
+        by_res_id = {}
+        if ids:
+            for request in Request.search(
+                [("res_model", "=", self._name), ("res_id", "in", ids)]
+            ):
+                by_res_id.setdefault(request.res_id, []).append(request.id)
         for record in self:
-            requests = Request.search(
-                [("res_model", "=", record._name), ("res_id", "=", record.id)]
-            )
+            requests = Request.browse(by_res_id.get(record._origin.id, []))
             record.approval_engine_request_ids = requests
-            if not requests:
-                record.approval_engine_state = "none"
-            elif requests.filtered(lambda r: r.state == "pending"):
+            states = set(requests.mapped("state"))
+            if "pending" in states:
                 record.approval_engine_state = "pending"
-            elif requests.filtered(lambda r: r.state == "rejected"):
+            elif "rejected" in states:
                 record.approval_engine_state = "rejected"
-            elif requests.filtered(lambda r: r.state == "approved"):
+            elif "approved" in states:
                 record.approval_engine_state = "approved"
             else:
                 record.approval_engine_state = "none"
@@ -75,15 +80,40 @@ class ApprovalEngineMixin(models.AbstractModel):
         """Called by the engine when a request is rejected."""
         return True
 
-    def _approval_block_action(self):
-        """Return a notification telling the user the operation is pending."""
+    def _approval_split_blocked(self, trigger_event):
+        """Evaluate the rules for every record and return the ones that must
+        wait for approval. Integrations run the real action on the rest, so a
+        batch action only holds the documents that actually need approval."""
+        blocked = self.browse()
+        for record in self:
+            if record._evaluate_approval_rules(trigger_event):
+                blocked |= record
+        return blocked
+
+    def _approval_block_action(self, done=None):
+        """Notification telling the user which documents are held for approval.
+
+        :param done: optional recordset of documents processed normally in the
+                     same batch (mentioned so the user knows they went through).
+        """
+        names = ", ".join(self.mapped("display_name"))
+        if done:
+            message = _(
+                "Held for approval: %(held)s. The other %(count)s document(s) were processed.",
+                held=names, count=len(done),
+            )
+        elif len(self) > 1:
+            message = _("Held for approval: %s.", names)
+        else:
+            message = _("This operation requires approval and is now pending.")
         return {
             "type": "ir.actions.client",
             "tag": "display_notification",
             "params": {
                 "title": _("Approval Required"),
-                "message": _("This operation requires approval and is now pending."),
+                "message": message,
                 "type": "warning",
                 "sticky": False,
+                "next": {"type": "ir.actions.client", "tag": "soft_reload"},
             },
         }

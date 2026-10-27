@@ -229,14 +229,14 @@ msgstr "Los niveles de aprobación de la regla '%s' deben tener secuencias únic
 #. module: odoo_approval_engine
 #. odoo-python
 #: code:addons/odoo_approval_engine/models/approval_request.py:0
-msgid "Approval request cancelled."
-msgstr "Solicitud de aprobación cancelada."
+msgid "Approval request cancelled by %s."
+msgstr "Solicitud de aprobación cancelada por %s."
 
 #. module: odoo_approval_engine
 #. odoo-python
 #: code:addons/odoo_approval_engine/models/approval_request.py:0
-msgid "Approval request created for %s (rule: %s)."
-msgstr "Solicitud de aprobación creada para %s (regla: %s)."
+msgid "Approval request created for %(document)s (rule: %(rule)s)."
+msgstr "Solicitud de aprobación creada para %(document)s (regla: %(rule)s)."
 
 #. module: odoo_approval_engine
 #: model_terms:ir.actions.act_window,help:odoo_approval_engine.action_approval_request
@@ -274,6 +274,11 @@ msgstr "Análisis de aprobaciones"
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_inbox_list_view
 msgid "Approve"
 msgstr "Aprobar"
+
+#. module: odoo_approval_engine
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_form_view
+msgid "Approve or reject the current stage."
+msgstr "Aprueba o rechaza la etapa actual."
 
 #. module: odoo_approval_engine
 #. odoo-python
@@ -529,8 +534,8 @@ msgstr "Estado de aprobación (motor)"
 #. module: odoo_approval_engine
 #. odoo-python
 #: code:addons/odoo_approval_engine/models/approval_rule.py:0
-msgid "Error evaluating approver expression on level '%s': %s"
-msgstr "Error al evaluar la expresión de aprobador del nivel '%s': %s"
+msgid "Error evaluating approver expression on level '%(level)s': %(error)s"
+msgstr "Error al evaluar la expresión de aprobador del nivel '%(level)s': %(error)s"
 
 #. module: odoo_approval_engine
 #: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_request_line__candidate_user_ids
@@ -575,6 +580,19 @@ msgid "Has Message"
 msgstr "Tiene mensaje"
 
 #. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_mixin.py:0
+msgid ""
+"Held for approval: %(held)s. The other %(count)s document(s) were processed."
+msgstr "Pendientes de aprobación: %(held)s. Los otros %(count)s documento(s) se han procesado."
+
+#. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_mixin.py:0
+msgid "Held for approval: %s."
+msgstr "Pendientes de aprobación: %s."
+
+#. module: odoo_approval_engine
 #: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_request__approval_duration
 msgid "Hours between the request and its final decision."
 msgstr "Horas entre la solicitud y su decisión final."
@@ -611,6 +629,24 @@ msgid "If checked, some messages have a delivery error."
 msgstr "Si está marcado, algunos mensajes tienen un error de entrega."
 
 #. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_rule.py:0
+msgid "Invalid Python condition on rule '%(rule)s': %(error)s"
+msgstr "Condición Python no válida en la regla '%(rule)s': %(error)s"
+
+#. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_rule_level.py:0
+msgid "Invalid approver expression on level '%(level)s': %(error)s"
+msgstr "Expresión de aprobador no válida en el nivel '%(level)s': %(error)s"
+
+#. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_rule.py:0
+msgid "Invalid condition on rule '%(rule)s': %(error)s"
+msgstr "Condición no válida en la regla '%(rule)s': %(error)s"
+
+#. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request__message_is_follower
 msgid "Is Follower"
 msgstr "Es seguidor"
@@ -639,6 +675,11 @@ msgstr "Última actualización el"
 #: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_trigger__model_id
 msgid "Leave empty for a universal trigger (any model)."
 msgstr "Déjalo vacío para un disparador universal (cualquier modelo)."
+
+#. module: odoo_approval_engine
+#: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_rule__company_id
+msgid "Leave empty to apply the rule to documents of every company."
+msgstr "Déjalo vacío para aplicar la regla a los documentos de todas las empresas."
 
 #. module: odoo_approval_engine
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_rule_form_view
@@ -835,8 +876,27 @@ msgstr "Cuando las reglas empiecen a activarse, analiza aquí las aprobaciones p
 #. module: odoo_approval_engine
 #. odoo-python
 #: code:addons/odoo_approval_engine/models/approval_request.py:0
-msgid "Only draft requests can be submitted (request %s is '%s')."
-msgstr "Solo se pueden enviar solicitudes en borrador (la solicitud %s está '%s')."
+msgid "Only Approvals Managers can do this."
+msgstr "Solo los responsables de aprobaciones pueden hacer esto."
+
+#. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_request.py:0
+msgid ""
+"Only draft requests can be submitted (request %(name)s is '%(state)s')."
+msgstr "Solo se pueden enviar solicitudes en borrador (la solicitud %(name)s está '%(state)s')."
+
+#. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_request.py:0
+msgid "Only open requests can be cancelled (request %(name)s is '%(state)s')."
+msgstr "Solo se pueden cancelar solicitudes abiertas (la solicitud %(name)s está '%(state)s')."
+
+#. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_request.py:0
+msgid "Only the requester or an Approvals Manager can cancel request %s."
+msgstr "Solo el solicitante o un responsable de aprobaciones puede cancelar la solicitud %s."
 
 #. module: odoo_approval_engine
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_inbox_form_view
@@ -937,6 +997,14 @@ msgid "Request"
 msgstr "Solicitud"
 
 #. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_request.py:0
+msgid ""
+"Request %s is already approved and its action has run; it cannot be "
+"reopened."
+msgstr "La solicitud %s ya está aprobada y su acción se ha ejecutado; no se puede reabrir."
+
+#. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request__request_date
 msgid "Request Date"
 msgstr "Fecha de solicitud"
@@ -1007,6 +1075,11 @@ msgstr "Aprobaciones requeridas"
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request__activity_user_id
 msgid "Responsible User"
 msgstr "Usuario responsable"
+
+#. module: odoo_approval_engine
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_form_view
+msgid "Review / Decide"
+msgstr "Revisar / Decidir"
 
 #. module: odoo_approval_engine
 #. odoo-python
@@ -1166,6 +1239,12 @@ msgid "This operation requires approval and is now pending."
 msgstr "Esta operación requiere aprobación y queda pendiente."
 
 #. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_request.py:0
+msgid "This stage is no longer awaiting a decision."
+msgstr "Esta etapa ya no está pendiente de decisión."
+
+#. module: odoo_approval_engine
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_inbox_list_view
 msgid "To Approve"
 msgstr "Por aprobar"
@@ -1274,8 +1353,8 @@ msgstr "Se ha registrado tu aprobación."
 #. module: odoo_approval_engine
 #. odoo-python
 #: code:addons/odoo_approval_engine/models/approval_request.py:0
-msgid "Your approval is required for request %s (level %s)."
-msgstr "Se requiere tu aprobación para la solicitud %s (nivel %s)."
+msgid "Your approval is required for request %(name)s (level %(level)s)."
+msgstr "Se requiere tu aprobación para la solicitud %(name)s (nivel %(level)s)."
 
 #. module: odoo_approval_engine
 #. odoo-python
@@ -1286,14 +1365,14 @@ msgstr "Se requiere tu aprobación para la solicitud %s."
 #. module: odoo_approval_engine
 #. odoo-python
 #: code:addons/odoo_approval_engine/models/approval_request.py:0
-msgid "Your approval request %s has been %s."
-msgstr "Tu solicitud de aprobación %s ha sido %s."
+msgid "Your approval request %s has been approved."
+msgstr "Tu solicitud de aprobación %s ha sido aprobada."
 
 #. module: odoo_approval_engine
 #. odoo-python
 #: code:addons/odoo_approval_engine/models/approval_request.py:0
-msgid "approved"
-msgstr "aprobada"
+msgid "Your approval request %s has been rejected."
+msgstr "Tu solicitud de aprobación %s ha sido rechazada."
 
 #. module: odoo_approval_engine
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_rule_form_view
@@ -1306,14 +1385,14 @@ msgid "e.g. Manager"
 msgstr "p. ej. Responsable"
 
 #. module: odoo_approval_engine
-#. odoo-python
-#: code:addons/odoo_approval_engine/models/approval_request.py:0
-msgid "rejected"
-msgstr "rechazada"
-
-#. module: odoo_approval_engine
 #: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_rule_level__approver_expression
 msgid ""
 "safe_eval expression returning a res.users recordset. Context: record, user,"
 " env."
 msgstr "Expresión safe_eval que devuelve un conjunto de res.users. Contexto: record, user, env."
+
+#. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_rule.py:0
+msgid "the condition must be a list"
+msgstr "la condición debe ser una lista"

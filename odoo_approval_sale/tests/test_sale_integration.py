@@ -264,3 +264,21 @@ class TestSaleIntegration(TransactionCase):
 
         # approval_engine_state must be 'none'
         self.assertEqual(order.approval_engine_state, "none")
+
+    # ------------------------------------------------------------------
+    # Test 4: batch confirmation only holds the orders that need approval
+    # ------------------------------------------------------------------
+    def test_batch_confirm_holds_only_orders_needing_approval(self):
+        """Confirming several orders at once confirms the low-value ones and
+        holds only the high-value one (instead of blocking the whole batch)."""
+        big = self._make_order(unit_price=15000.0)
+        small = self._make_order(unit_price=500.0)
+
+        result = (big | small).action_confirm()
+
+        self.assertEqual(small.state, "sale", "Low-value order must be confirmed.")
+        self.assertNotEqual(big.state, "sale", "High-value order must be held.")
+        self.assertEqual(big.approval_engine_state, "pending")
+        self.assertEqual(small.approval_engine_state, "none")
+        self.assertEqual(result.get("type"), "ir.actions.client")
+        self.assertIn(big.name, result["params"]["message"])

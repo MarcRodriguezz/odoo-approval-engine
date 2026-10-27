@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Approval & Rules Engine",
-    "version": "19.0.3.0.0",
+    "version": "19.0.3.1.0",
     "summary": "Turn any Odoo action into a configurable, multi-stage approval flow — "
     "no code. Sales, Purchase, Invoicing & Expenses included.",
     "description": """

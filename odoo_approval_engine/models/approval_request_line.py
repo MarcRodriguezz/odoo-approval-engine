@@ -84,7 +84,7 @@ class ApprovalRequestLine(models.Model):
                 lambda l: l.sequence == line.level
             )[:1]
             line.stage_label = (lvl.name if lvl and lvl.name
-                                else _("Stage %s") % line.level)
+                                else _("Stage %s", line.level))
 
     # --- Candidate resolution (live) ---------------------------------------
     def _effective_candidate_users(self):

@@ -48,7 +48,9 @@
          Record Rules — approval.engine.request
     ================================================================ -->
 
-    <!-- Regular users: read/write own requests (requested_by OR approver on a line) -->
+    <!-- Regular users: read own requests (requested_by OR approver on a line).
+         Requests are read-only for them: the engine writes with sudo after
+         checking who may decide, so nobody can edit their own approval. -->
     <record id="rule_approval_request_user" model="ir.rule">
         <field name="name">Approval Request: User sees own requests</field>
         <field name="model_id" ref="odoo_approval_engine.model_approval_engine_request"/>
@@ -62,8 +64,8 @@
         </field>
         <field name="groups" eval="[(4, ref('base.group_user'))]"/>
         <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
         <field name="perm_unlink" eval="False"/>
     </record>
 
@@ -102,8 +104,8 @@
         </field>
         <field name="groups" eval="[(4, ref('base.group_user'))]"/>
         <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
         <field name="perm_unlink" eval="False"/>
     </record>
 

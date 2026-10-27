@@ -408,29 +408,51 @@ class TestRequestLifecycle(TransactionCase):
         self.assertFalse(request.line_ids.filtered(lambda l: l.level == 2))
         self.assertEqual(request.state, "pending")
 
-    def test_step_back_approved_request(self):
-        """An already-approved request can be sent back to 'pending'."""
+    def test_step_back_approved_request_raises(self):
+        """An approved request already ran its held action: it cannot be
+        reopened (re-approving would run the action twice)."""
         rule = self._make_rule(levels=1)
         request = self._make_pending_request(rule)
         request._register_decision(request.line_ids[0], "approved")
         self.assertEqual(request.state, "approved")
+        with self.assertRaises(UserError):
+            request.action_step_back()
+        self.assertEqual(request.state, "approved")
+
+    def test_step_back_rejected_request_reopens(self):
+        """A rejected request can be reopened at the stage that rejected it."""
+        rule = self._make_rule(levels=2)
+        request = self._make_pending_request(rule)
+        self._approve_line(request, self.approver)       # stage 1 -> stage 2
+        self._reject_line(request, self.approver, "No")  # stage 2 rejects
+        self.assertEqual(request.state, "rejected")
         request.action_step_back()
         self.assertEqual(request.state, "pending")
+        self.assertEqual(request.current_level, 2)
+        self.assertEqual(self._current_stage(request).decision, "pending")
+
+    def test_cancel_approved_request_raises(self):
+        """Approved (or otherwise closed) requests cannot be cancelled."""
+        rule = self._make_rule(levels=1)
+        request = self._make_pending_request(rule)
+        request._register_decision(request.line_ids[0], "approved")
+        with self.assertRaises(UserError):
+            request.action_cancel()
+        self.assertEqual(request.state, "approved")
 
     def test_step_back_cycles_never_duplicate_stages(self):
         """Repeated step-back / re-approve must keep exactly one line per stage."""
         rule = self._make_rule(levels=2)
         request = self._make_pending_request(rule)
-        self._approve_line(request, self.approver)   # stage 1 -> stage 2
-        self._approve_line(request, self.approver)   # stage 2 -> approved
-        self.assertEqual(request.state, "approved")
 
         for _i in range(3):
-            request.action_step_back()
-            request._register_decision(
-                self._current_stage(request), "approved", actor=self.approver
-            )
+            self._approve_line(request, self.approver)   # stage 1 -> stage 2
+            self.assertEqual(request.current_level, 2)
+            request.action_step_back()                   # back to stage 1
+            self.assertEqual(request.current_level, 1)
 
+        self._approve_line(request, self.approver)       # stage 1 -> stage 2
+        self._approve_line(request, self.approver)       # stage 2 -> approved
         self.assertEqual(sorted(request.line_ids.mapped("level")), [1, 2],
                          "There must be exactly one line per stage.")
         self.assertEqual(request.state, "approved")
@@ -455,7 +477,7 @@ class TestRequestLifecycle(TransactionCase):
         rule = self._make_rule(levels=1)
         request = self._make_pending_request(rule)
         self.assertFalse(request.closed_date)
-        request._register_decision(request.line_ids[0], "approved")
+        request._register_decision(request.line_ids[0], "rejected", comment="No")
         self.assertTrue(request.closed_date)
         self.assertGreaterEqual(request.approval_duration, 0.0)
         # reopening clears the closed date

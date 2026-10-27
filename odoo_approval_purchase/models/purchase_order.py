@@ -10,13 +10,13 @@ class PurchaseOrder(models.Model):
         # Confirming after approval bypasses re-evaluation (see sale integration).
         if self.env.context.get("approval_bypass"):
             return super().button_confirm()
-        blocked = False
-        for order in self:
-            if order._evaluate_approval_rules("on_confirm"):
-                blocked = True
-        if blocked:
-            return self._approval_block_action()
-        return super().button_confirm()
+        blocked = self._approval_split_blocked("on_confirm")
+        if not blocked:
+            return super().button_confirm()
+        to_confirm = self - blocked
+        if to_confirm:
+            super(PurchaseOrder, to_confirm).button_confirm()
+        return blocked._approval_block_action(done=to_confirm)
 
     def _on_approval_approved(self):
         # Engine calls this when the request is fully approved -> confirm for real.

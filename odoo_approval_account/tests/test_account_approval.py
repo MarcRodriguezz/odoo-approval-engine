@@ -47,7 +47,7 @@ class TestAccountApproval(AccountTestInvoicingCommon):
         ], limit=1)
         self.assertTrue(req)
         line = req.line_ids.filtered(lambda l: l.decision == "pending")[:1]
-        req._register_decision(line, "approved")
+        line.with_user(self.approver).action_quick_approve()
         self.assertEqual(req.state, "approved")
         self.assertEqual(inv.state, "posted")
 

@@ -55,8 +55,9 @@ docker exec odoo19-app odoo -d approval_test \
   --stop-after-init --http-port=8999 --gevent-port=8998 --max-cron-threads=0
 ```
 
-Expected: **0 failed, 0 error(s)** — 59 tests (engine 58 incl. a generic on_create test on
-res.partner; sale 7; purchase 4; account 4; expense 4).
+Expected: **0 failed, 0 error(s) of 87 tests** (engine 75, sale 6, purchase 2, account 2,
+expense 2). The same suite runs in GitHub Actions on every push
+([`.github/workflows/tests.yml`](../.github/workflows/tests.yml)).
 
 ## Translations (i18n)
 

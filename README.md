@@ -98,9 +98,9 @@ Click **New** and fill in *When does it apply?*:
 | **Document** | `Sales Order` (only integrated documents are listed) |
 | **Approvable Action** | `Sale Order: Confirmation` |
 
-Then, in the **Conditions** tab, set when it should fire — a point-and-click **Domain** or a
-one-line **Python** expression such as `record.amount_total > 10000`. Leave both empty to match
-every record.
+Then, in the **Conditions** tab, set when it should fire — a point-and-click **Domain** or (for
+administrators) a one-line **Python** expression such as `record.amount_total > 10000`. Leave both
+empty to match every record. Conditions are checked when you save the rule.
 
 ### 3 — Say who must approve
 
@@ -139,8 +139,10 @@ request and notifies the requester.
 
 Open any request under **Approval Engine ▸ All Requests**:
 
-- The **status bar** (Draft → Pending → Approved/Rejected) — change it only through the buttons
-  (**Reopen** brings a finished/cancelled request back to pending).
+- The **status bar** (Draft → Pending → Approved/Rejected) — change it only through the buttons.
+  An **Approvals Manager** can **Step back** a request to a previous stage, or reopen a rejected /
+  cancelled one. The requester can **Cancel** their own open request. Approved requests are final:
+  their action has already run.
 - One line per approver with their decision, date and comment.
 - The **chatter** + email notifications — a permanent, auditable trail.
 - A smart button jumps back to the source document.
@@ -185,7 +187,12 @@ Technical docs live in [`docs/`](docs/):
 
 Modules: `odoo_approval_engine` (model-agnostic core) + integrations `odoo_approval_sale`,
 `odoo_approval_purchase`, `odoo_approval_account`, `odoo_approval_expense`. Multilingual
-(English + Spanish). **64 automated tests green on Odoo 19.**
+(English + Spanish). **87 automated tests green on Odoo 19.**
+
+**Security in short:** requests are read-only for regular users and every decision is checked
+server-side, so nobody can approve their own request; Python conditions are restricted to
+administrators; a rule that cannot be evaluated holds the document instead of letting it through;
+rules respect companies. Details in [`docs/ARCHITECTURE.md` § Security](docs/ARCHITECTURE.md#5-security).
 
 ## License
 

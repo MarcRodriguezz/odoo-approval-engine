@@ -62,7 +62,7 @@ header and the list.
 
 Open the request (**All Requests**): the status bar, every stage with *who
 approved* and when, the chatter history, and a button back to the document.
-**Step back** sends it to a previous stage if something changed.
+As an Approvals Manager, **Step back** sends it to a previous stage if something changed.
 
 > "Every euro held, every decision, fully auditable."
 

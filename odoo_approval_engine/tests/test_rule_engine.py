@@ -66,9 +66,11 @@ class TestRuleEngine(TransactionCase):
         rule = self._make_rule(condition_domain="[('name', '=', '__nope_xyz__')]")
         self.assertFalse(self._match_domain(self.partner, rule))
 
-    def test_match_domain_unparseable_false(self):
-        rule = self._make_rule(condition_domain="not a domain (")
-        self.assertFalse(self._match_domain(self.partner, rule))
+    def test_match_domain_unparseable_rejected_on_save(self):
+        """A domain that cannot be parsed is refused when the rule is saved
+        (instead of silently disabling the rule at runtime)."""
+        with self.assertRaises(ValidationError):
+            self._make_rule(condition_domain="not a domain (")
 
     # --- _approval_resolve_approvers -----------------------------------
 

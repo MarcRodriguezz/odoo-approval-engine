@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError
+from odoo.tools.safe_eval import test_python_expr
 
 
 class ApprovalRuleLevel(models.Model):
@@ -19,8 +20,11 @@ class ApprovalRuleLevel(models.Model):
         default="group",
     )
     approver_group_id = fields.Many2one("res.groups", string="Approver Group")
+    # Evaluated with superuser rights: administrators only (see the rule's
+    # condition_python).
     approver_expression = fields.Text(
         string="Approver Expression",
+        groups="base.group_system",
         help="safe_eval expression returning a res.users recordset. "
         "Context: record, user, env.",
     )
@@ -32,17 +36,23 @@ class ApprovalRuleLevel(models.Model):
 
     @api.constrains("approver_type", "approver_group_id", "approver_expression")
     def _check_approver_config(self):
-        for level in self:
+        for level in self.sudo():
+            label = level.name or level.sequence
             if level.approver_type == "group" and not level.approver_group_id:
                 raise ValidationError(
-                    _("Level '%s' requires an approver group.")
-                    % (level.name or level.sequence)
+                    _("Level '%s' requires an approver group.", label)
                 )
-            if level.approver_type == "expression" and not level.approver_expression:
-                raise ValidationError(
-                    _("Level '%s' requires an approver expression.")
-                    % (level.name or level.sequence)
-                )
+            if level.approver_type == "expression":
+                if not level.approver_expression:
+                    raise ValidationError(
+                        _("Level '%s' requires an approver expression.", label)
+                    )
+                error = test_python_expr(level.approver_expression.strip(), mode="eval")
+                if error:
+                    raise ValidationError(
+                        _("Invalid approver expression on level '%(level)s': %(error)s",
+                          level=label, error=error)
+                    )
 
     @api.constrains("min_approvals")
     def _check_min_approvals(self):

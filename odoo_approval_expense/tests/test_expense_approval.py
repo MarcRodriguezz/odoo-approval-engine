@@ -47,7 +47,7 @@ class TestExpenseApproval(TestExpenseCommon):
 
         line = req.line_ids.filtered(lambda l: l.decision == "pending")[:1]
         self.assertTrue(line)
-        req._register_decision(line, "approved")
+        line.with_user(self.appr_user).action_quick_approve()
         self.assertEqual(req.state, "approved")
         self.assertEqual(expense.state, "submitted")
 

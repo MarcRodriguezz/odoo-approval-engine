@@ -4,10 +4,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 19.0+e-20260528\n"
+"Project-Id-Version: Odoo Server 19.0-20261015\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-26 10:45+0000\n"
-"PO-Revision-Date: 2026-06-26 10:45+0000\n"
+"POT-Creation-Date: 2026-10-27 12:56+0000\n"
+"PO-Revision-Date: 2026-10-27 12:56+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -228,13 +228,13 @@ msgstr ""
 #. module: odoo_approval_engine
 #. odoo-python
 #: code:addons/odoo_approval_engine/models/approval_request.py:0
-msgid "Approval request cancelled."
+msgid "Approval request cancelled by %s."
 msgstr ""
 
 #. module: odoo_approval_engine
 #. odoo-python
 #: code:addons/odoo_approval_engine/models/approval_request.py:0
-msgid "Approval request created for %s (rule: %s)."
+msgid "Approval request created for %(document)s (rule: %(rule)s)."
 msgstr ""
 
 #. module: odoo_approval_engine
@@ -272,6 +272,11 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_inbox_form_view
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_inbox_list_view
 msgid "Approve"
+msgstr ""
+
+#. module: odoo_approval_engine
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_form_view
+msgid "Approve or reject the current stage."
 msgstr ""
 
 #. module: odoo_approval_engine
@@ -528,7 +533,7 @@ msgstr ""
 #. module: odoo_approval_engine
 #. odoo-python
 #: code:addons/odoo_approval_engine/models/approval_rule.py:0
-msgid "Error evaluating approver expression on level '%s': %s"
+msgid "Error evaluating approver expression on level '%(level)s': %(error)s"
 msgstr ""
 
 #. module: odoo_approval_engine
@@ -574,6 +579,19 @@ msgid "Has Message"
 msgstr ""
 
 #. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_mixin.py:0
+msgid ""
+"Held for approval: %(held)s. The other %(count)s document(s) were processed."
+msgstr ""
+
+#. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_mixin.py:0
+msgid "Held for approval: %s."
+msgstr ""
+
+#. module: odoo_approval_engine
 #: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_request__approval_duration
 msgid "Hours between the request and its final decision."
 msgstr ""
@@ -610,6 +628,24 @@ msgid "If checked, some messages have a delivery error."
 msgstr ""
 
 #. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_rule.py:0
+msgid "Invalid Python condition on rule '%(rule)s': %(error)s"
+msgstr ""
+
+#. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_rule_level.py:0
+msgid "Invalid approver expression on level '%(level)s': %(error)s"
+msgstr ""
+
+#. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_rule.py:0
+msgid "Invalid condition on rule '%(rule)s': %(error)s"
+msgstr ""
+
+#. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request__message_is_follower
 msgid "Is Follower"
 msgstr ""
@@ -637,6 +673,11 @@ msgstr ""
 #. module: odoo_approval_engine
 #: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_trigger__model_id
 msgid "Leave empty for a universal trigger (any model)."
+msgstr ""
+
+#. module: odoo_approval_engine
+#: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_rule__company_id
+msgid "Leave empty to apply the rule to documents of every company."
 msgstr ""
 
 #. module: odoo_approval_engine
@@ -834,7 +875,26 @@ msgstr ""
 #. module: odoo_approval_engine
 #. odoo-python
 #: code:addons/odoo_approval_engine/models/approval_request.py:0
-msgid "Only draft requests can be submitted (request %s is '%s')."
+msgid "Only Approvals Managers can do this."
+msgstr ""
+
+#. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_request.py:0
+msgid ""
+"Only draft requests can be submitted (request %(name)s is '%(state)s')."
+msgstr ""
+
+#. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_request.py:0
+msgid "Only open requests can be cancelled (request %(name)s is '%(state)s')."
+msgstr ""
+
+#. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_request.py:0
+msgid "Only the requester or an Approvals Manager can cancel request %s."
 msgstr ""
 
 #. module: odoo_approval_engine
@@ -936,6 +996,14 @@ msgid "Request"
 msgstr ""
 
 #. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_request.py:0
+msgid ""
+"Request %s is already approved and its action has run; it cannot be "
+"reopened."
+msgstr ""
+
+#. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request__request_date
 msgid "Request Date"
 msgstr ""
@@ -1005,6 +1073,11 @@ msgstr ""
 #. module: odoo_approval_engine
 #: model:ir.model.fields,field_description:odoo_approval_engine.field_approval_engine_request__activity_user_id
 msgid "Responsible User"
+msgstr ""
+
+#. module: odoo_approval_engine
+#: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_request_form_view
+msgid "Review / Decide"
 msgstr ""
 
 #. module: odoo_approval_engine
@@ -1165,6 +1238,12 @@ msgid "This operation requires approval and is now pending."
 msgstr ""
 
 #. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_request.py:0
+msgid "This stage is no longer awaiting a decision."
+msgstr ""
+
+#. module: odoo_approval_engine
 #: model_terms:ir.ui.view,arch_db:odoo_approval_engine.approval_inbox_list_view
 msgid "To Approve"
 msgstr ""
@@ -1273,7 +1352,7 @@ msgstr ""
 #. module: odoo_approval_engine
 #. odoo-python
 #: code:addons/odoo_approval_engine/models/approval_request.py:0
-msgid "Your approval is required for request %s (level %s)."
+msgid "Your approval is required for request %(name)s (level %(level)s)."
 msgstr ""
 
 #. module: odoo_approval_engine
@@ -1285,13 +1364,13 @@ msgstr ""
 #. module: odoo_approval_engine
 #. odoo-python
 #: code:addons/odoo_approval_engine/models/approval_request.py:0
-msgid "Your approval request %s has been %s."
+msgid "Your approval request %s has been approved."
 msgstr ""
 
 #. module: odoo_approval_engine
 #. odoo-python
 #: code:addons/odoo_approval_engine/models/approval_request.py:0
-msgid "approved"
+msgid "Your approval request %s has been rejected."
 msgstr ""
 
 #. module: odoo_approval_engine
@@ -1305,14 +1384,14 @@ msgid "e.g. Manager"
 msgstr ""
 
 #. module: odoo_approval_engine
-#. odoo-python
-#: code:addons/odoo_approval_engine/models/approval_request.py:0
-msgid "rejected"
-msgstr ""
-
-#. module: odoo_approval_engine
 #: model:ir.model.fields,help:odoo_approval_engine.field_approval_engine_rule_level__approver_expression
 msgid ""
 "safe_eval expression returning a res.users recordset. Context: record, user,"
 " env."
+msgstr ""
+
+#. module: odoo_approval_engine
+#. odoo-python
+#: code:addons/odoo_approval_engine/models/approval_rule.py:0
+msgid "the condition must be a list"
 msgstr ""

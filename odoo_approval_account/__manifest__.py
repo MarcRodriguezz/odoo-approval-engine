@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Approval Engine — Invoicing Integration",
-    "version": "19.0.3.0.0",
+    "version": "19.0.3.1.0",
     "license": "LGPL-3",
     "category": "Accounting/Accounting",
     "summary": "Wire account.move (invoices/bills) into the approval engine",

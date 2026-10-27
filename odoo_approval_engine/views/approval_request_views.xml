@@ -43,13 +43,14 @@
                             string="Step back"
                             type="object"
                             class="btn-secondary"
-                            invisible="state == 'draft'"
+                            groups="odoo_approval_engine.group_approval_manager"
+                            invisible="state in ('draft', 'approved')"
                             help="Send the request back one stage. Press again to go further back."/>
                     <button name="action_cancel"
                             string="Cancel"
                             type="object"
                             class="btn-secondary"
-                            invisible="state == 'cancelled'"
+                            invisible="state not in ('draft', 'pending')"
                             confirm="Are you sure you want to cancel this approval request?"/>
                     <field name="state" widget="statusbar"
                            statusbar_visible="draft,pending,approved,rejected"/>

@@ -1,256 +1,203 @@
-# Phase 1 — Technical Architecture (Odoo 19)
+# Technical Architecture (Odoo 19)
 
-This document is the detailed engineering design of the module.
-
----
-
-## 1. System Context
-
-`odoo_approval_engine` is a **model-agnostic** core that any Odoo model can opt into by inheriting
-the `approval.engine.mixin`. Integration modules (starting with `odoo_approval_sale`) wire the
-core into concrete business flows. The engine intercepts a business action (e.g. *Confirm Sale
-Order*), checks configured rules, and — if a rule matches — holds the action until a sequential,
-multi-level approval is completed, with full chatter/email traceability.
-
-```
-┌──────────────────────────┐     inherits      ┌───────────────────────────┐
-│ odoo_approval_sale        │ ───────────────▶ │ approval.engine.mixin      │
-│  sale.order.action_confirm│                   │  _evaluate_approval_rules()│
-└──────────────────────────┘                   └────────────┬──────────────┘
-                                                             │ creates
-                                       ┌─────────────────────▼─────────────────────┐
-                                       │ approval.request (mail.thread) state machine│
-                                       │   └─ approval.request.line (per approver)   │
-                                       └─────────────────────┬─────────────────────┘
-                                                             │ evaluated against
-                                       ┌─────────────────────▼─────────────────────┐
-                                       │ approval.rule ─< approval.rule.level         │
-                                       └─────────────────────────────────────────────┘
-```
+Engineering reference for the Approval & Rules Engine. End-user docs live in the
+[README](../README.md); install and test commands in [INSTALL.md](INSTALL.md).
 
 ---
 
-## 2. Dependencies (Odoo 19)
+## 1. Overview
 
-| Module | Why |
+`odoo_approval_engine` is a **model-agnostic** core. It holds a business action (confirm a sale,
+post an invoice, …) until a configurable, multi-stage approval completes, with a full chatter
+trail. Integration modules wire it into concrete documents:
+
+```
+┌───────────────────────────────┐  inherits   ┌──────────────────────────────┐
+│ odoo_approval_sale / purchase │ ──────────▶ │ approval.engine.mixin        │
+│ / account / expense           │             │  _approval_split_blocked()   │
+│  (gated business method)      │             │  _on_approval_approved()     │
+└───────────────────────────────┘             └──────────────┬───────────────┘
+                                                             │ evaluates / creates
+                              ┌──────────────────────────────▼───────────────────────────┐
+                              │ approval.engine.request (mail.thread) — state machine     │
+                              │   └─ approval.engine.request.line — one line per stage    │
+                              └──────────────────────────────┬───────────────────────────┘
+                                                             │ configured by
+                              ┌──────────────────────────────▼───────────────────────────┐
+                              │ approval.engine.rule ─< approval.engine.rule.level        │
+                              │   └─ approval.engine.trigger (the gated action)           │
+                              └──────────────────────────────────────────────────────────┘
+```
+
+On top of that, a global hook on `base` makes **on create / on modification** rules work on *any*
+model with no per-model code (§4.2).
+
+Dependencies: `base`, `mail` (core); `sale`, `purchase`, `account`, `hr_expense` (integrations
+only). Community-only, no external Python packages.
+
+---
+
+## 2. Data model
+
+### `approval.engine.rule`
+| Field | Notes |
 |---|---|
-| `base` | ir.model, res.users, res.groups, ir.sequence |
-| `mail` | `mail.thread`, `mail.activity.mixin`, email + chatter notifications |
-| `sale` | (integration module only) `sale.order` |
+| `name`, `active`, `sequence` | rules are evaluated by `sequence, id`; the first match wins |
+| `model_id` / `model_name` | target model (selector limited to integrated models) |
+| `trigger_id` / `trigger_event` | user-facing action selector / technical matching key (kept in sync) |
+| `condition_domain` | optional domain, validated on save against the target model |
+| `condition_python` | optional `safe_eval` boolean expression — **administrators only** (§5) |
+| `level_ids` | ≥ 1 level, unique sequences |
+| `company_id` | empty = applies to every company; otherwise only to documents of that company |
 
-No external Python packages beyond the Odoo 19 baseline (`python-dateutil` ships with Odoo).
-
----
-
-## 3. Data Models (field-level spec)
-
-### 3.1 `approval.rule`
-| Field | Type | Notes |
-|---|---|---|
-| `name` | Char, required | |
-| `active` | Boolean, default True | archivable |
-| `sequence` | Integer | evaluation order |
-| `model_id` | Many2one `ir.model`, required | target model |
-| `model_name` | Char, related `model_id.model`, stored | fast lookup in engine |
-| `trigger_event` | Selection `on_create/on_write/on_confirm`, required | |
-| `condition_domain` | Char (domain widget) | applied via `search` on the record id |
-| `condition_python` | Text | optional `safe_eval` boolean expr |
-| `level_ids` | One2many `approval.rule.level` | required ≥1 |
-| `company_id` | Many2one `res.company` | default current |
-
-Constraint: at least one level; level sequences unique within a rule.
-
-### 3.2 `approval.rule.level`
-| Field | Type | Notes |
-|---|---|---|
-| `rule_id` | Many2one `approval.rule`, ondelete cascade | |
-| `sequence` | Integer, required | level order 1..N |
-| `name` | Char | e.g. "Manager", "Finance" |
-| `approver_type` | Selection `group/expression`, required | |
-| `approver_group_id` | Many2one `res.groups` | required if type=group |
-| `approver_expression` | Text | safe_eval → `res.users` recordset; required if type=expression |
-| `min_approvals` | Integer, default 1 | approvals needed to clear level |
-
-### 3.3 `approval.request`  (inherits `mail.thread`, `mail.activity.mixin`)
-| Field | Type | Notes |
-|---|---|---|
-| `name` | Char, default `/` | filled from `ir.sequence` |
-| `rule_id` | Many2one `approval.rule`, required | |
-| `res_model` | Char, required, index | source model |
-| `res_id` | Integer, required, index | source record id |
-| `resource_ref` | Reference (selection from ir.model) | computed clickable link |
-| `state` | Selection `draft/pending/approved/rejected/cancelled`, tracking=True | |
-| `requested_by` | Many2one `res.users`, default current | |
-| `request_date` | Datetime, default now | |
-| `current_level` | Integer, default 1 | |
-| `line_ids` | One2many `approval.request.line` | |
-| `company_id` | Many2one `res.company` | |
-
-### 3.4 `approval.request.line`
-| Field | Type | Notes |
-|---|---|---|
-| `request_id` | Many2one `approval.request`, ondelete cascade | |
-| `level` | Integer | which level this line belongs to |
-| `approver_id` | Many2one `res.users`, required | |
-| `decision` | Selection `pending/approved/rejected`, default pending | |
-| `decision_date` | Datetime | set on decision |
-| `comment` | Text | from wizard |
-
----
-
-## 4. Business Logic
-
-### 4.1 Engine evaluation (`approval.engine.mixin`)
-```
-_evaluate_approval_rules(trigger_event) -> bool (True = blocked)
-  rules = approval.rule.search([model_name=self._name, trigger_event=event, active])
-        sorted by sequence
-  for rule in rules:
-      if not self._approval_match_domain(rule): continue
-      if rule.condition_python and not safe_eval_bool(rule.condition_python, ctx): continue
-      if existing open request for (self, rule): return True
-      _approval_create_request(rule); return True
-  return False
-```
-`ctx = {'record': self, 'user': self.env.user, 'datetime': datetime, 'relativedelta': relativedelta}`
-
-### 4.2 Request creation
-- Create `approval.request` (state `pending`, current_level=1).
-- Generate lines for level 1 via `_approval_resolve_approvers(level)`:
-  - `group` → all users in group.
-  - `expression` → `safe_eval` returning `res.users`.
-- Post chatter message + `mail.activity` / email to approvers of level 1.
-
-### 4.3 Decision flow (wizard `approval.decision.wizard`)
-- Approver approves/rejects with optional comment → updates their line.
-- **Reject** (any line, current level) → request `rejected`, notify requester, call
-  `record._on_approval_rejected()`.
-- **Approve**: if `approved lines at current_level >= level.min_approvals`:
-  - if more levels → `current_level += 1`, generate next level lines, notify them.
-  - else → state `approved`, call `record._on_approval_approved()` (executes the held action).
-
-### 4.4 Source-record hooks (default no-op in mixin, overridden by integrations)
-- `_on_approval_approved()` — perform the originally blocked action.
-- `_on_approval_rejected()` — optional rollback/notification.
-- `_approval_block_action()` — return an action/notification telling the user it's pending.
-
----
-
-## 5. Security
-
-### 5.1 Groups (`security/approval_security.xml`)
-| Group | Rights |
+### `approval.engine.rule.level`
+| Field | Notes |
 |---|---|
-| `group_approval_user` | create/read own requests; read rules |
-| `group_approval_approver` | act on lines assigned to them |
-| `group_approval_manager` | full CRUD on rules & requests (implies approver) |
+| `sequence`, `name` | stage order and label (e.g. "Manager", "Finance") |
+| `approver_type` | `group` (live group membership) or `expression` |
+| `approver_group_id` | required for `group` |
+| `approver_expression` | `safe_eval` returning `res.users` — **administrators only** (§5) |
+| `min_approvals` | distinct approvals needed to clear the stage (≥ 1) |
 
-### 5.2 Record rules
-- Users see requests where they are `requested_by` OR an `approver_id` on a line.
-- Managers see all (company-scoped via `company_id`).
+### `approval.engine.request` (`mail.thread`, `mail.activity.mixin`)
+`name` (sequence), `rule_id`, `res_model` / `res_id` (+ computed `resource_ref`), `state`
+(`draft → pending → approved / rejected / cancelled`), `requested_by`, `request_date`,
+`current_level`, `line_ids`, `company_id` (the **document's** company), and analytics fields
+`closed_date` / `approval_duration` (stored, averaged in the dashboard).
 
-### 5.3 `ir.model.access.csv`
-Matrix for the 4 models × 3 groups. Rules are read-only for non-managers.
+### `approval.engine.request.line` — one line per stage
+`level`, `min_approvals`, `approver_group_id` (matched live, incl. implied membership) or
+`candidate_user_ids` (expression approvers), `approved_by_ids`, `approver_id` (who closed the
+stage), `decision`, `decision_date`, `comment`.
 
----
-
-## 6. UI (OWL / XML views)
-
-- **Rules**: list + form (with levels one2many, domain widget, code editor for expressions).
-- **Requests**: list (state-colored), form (statusbar, chatter, lines, smart button to source).
-- **Inbox**: filtered action "My Pending Approvals" = lines where `approver_id == uid` and
-  `decision == pending`; buttons open the decision wizard.
-- **Menus**: root *Approvals* → *My Inbox*, *Requests*, *Configuration > Rules*.
-
----
-
-## 7. Testing Strategy
-
-| Layer | Tests |
-|---|---|
-| Engine | rule matching by domain + python; no-match path; duplicate-request guard |
-| Lifecycle | submit→pending; single & multi-level approve→approved; reject→rejected; min_approvals |
-| Security | approver cannot see foreign requests; non-manager cannot edit rules |
-| Integration | sale.order confirm blocked until approved; approval triggers real confirm |
-
-All tests use `TransactionCase`, tagged `@tagged("approval")`, runnable with Odoo's `--test-tags approval` option.
+### `approval.engine.trigger`
+An approvable action: `code` + optional `model_id`. Universal triggers (`on_create`, `on_write`)
+have no model; integrations ship model-specific ones (`on_confirm`, `on_post`, `on_submit`).
 
 ---
 
-# Phase 2 additions (v19.0.2.0.0)
-
-## A. Approvable Actions (`approval.engine.trigger`)
-
-A rule now states *which action* it gates, per document.
-
-- `approval.engine.trigger`: `name`, `code`, `model_id` (empty = universal), `active`.
-- Universal triggers shipped by the core: **On creation** (`on_create`), **On modification**
-  (`on_write`). Integrations ship model-specific ones (e.g. *Sale Order: Confirmation* →
-  `on_confirm` / `sale.order`).
-- `approval.engine.rule.trigger_id` is the user-facing selector, filtered in the form to
-  `['|', ('model_id','=',False), ('model_id','=',model_id)]`. It syncs the technical matching key
-  `trigger_event` (Char) on create/write. The engine still matches on `trigger_event`.
-- The rule's **Document** selector is limited to integrated models via the computed
-  `allowed_model_ids` (= models that have a model-specific trigger).
-
-## B. Generic engine on any model (`models/base_approval.py`)
-
-`base` is extended with `create` / `write` overrides that route records through the engine when a
-matching `on_create` / `on_write` rule exists:
+## 3. Lifecycle
 
 ```
-base.create()/write()  ->  _approval_engine_trigger(event)
-  skip if: not registry.ready, engine's own models, approval_bypass ctx
-  skip O(1) if model not in approval.engine.rule._models_with_rules(event)  # ormcache
-  else: approval.engine.request._evaluate_rules_for(record, event)
+gated action ─▶ _evaluate_rules_for(record, event)
+                  rules = active rules for model + event (+ company filter)
+                  first rule whose conditions match:
+                     open request exists? ─▶ hold
+                     else _create_request_for() ─▶ pending, stage 1 line, notify ─▶ hold
+                  no match ─▶ action runs normally
+
+decision (inbox / wizard) ─▶ line._check_can_decide()   (candidate approver or manager)
+                         ─▶ request.sudo()._register_decision(line, decision, actor)
+                               line must be pending and at current_level
+                               reject  ─▶ rejected, notify requester, _on_approval_rejected()
+                               approve ─▶ add actor; when min_approvals reached:
+                                          next stage ─▶ _advance_level() + notify
+                                          last stage ─▶ approved, _on_approval_approved()
 ```
 
-The ormcache is cleared on any rule create/write/unlink. Matching always re-queries real rules, so
-a stale cache only ever causes a redundant lookup — never a wrong request. This makes
-`on_create` / `on_write` rules work on **any** model with no per-model code.
+- **Batch actions.** `_approval_split_blocked(event)` returns only the records that need
+  approval; integrations run the real action on the others and show a notification listing the
+  held documents.
+- **Held action.** `_on_approval_approved()` re-runs the gated method with the
+  `approval_bypass` context flag, under `sudo()` — the approval itself is the authorization.
+- **Stages are idempotent.** `_generate_lines_for_level()` resets and reuses the stage line, so
+  step-back / re-approve cycles never duplicate lines.
+- **Step back** (managers): from `pending` go back one stage; from `rejected` / `cancelled`
+  reopen the last stage. **Approved requests cannot be reopened or cancelled** — their action
+  already ran.
+- **Cancel**: managers, or the requester for their own open (`draft` / `pending`) request.
 
-Matching + request creation live on `approval.engine.request` (`_evaluate_rules_for`,
-`_create_request_for`); `approval.engine.mixin` delegates to them. Domain matching is
-`approval.engine.rule._match_record`.
+---
 
-## C. Action-blocking integrations
+## 4. Integration points
 
-To hold a *specific* business action (which differs per model), a model inherits the mixin and
-overrides that method with the bypass-flag pattern:
+### 4.1 Gating a business action (mixin)
 
-| Module | Model | Gated method | Trigger code |
-|--------|-------|--------------|--------------|
+```python
+class SaleOrder(models.Model):
+    _name = "sale.order"
+    _inherit = ["sale.order", "approval.engine.mixin"]
+
+    def action_confirm(self):
+        if self.env.context.get("approval_bypass"):
+            return super().action_confirm()
+        blocked = self._approval_split_blocked("on_confirm")
+        if not blocked:
+            return super().action_confirm()
+        to_confirm = self - blocked
+        if to_confirm:
+            super(SaleOrder, to_confirm).action_confirm()
+        return blocked._approval_block_action(done=to_confirm)
+
+    def _on_approval_approved(self):
+        return self.with_context(approval_bypass=True).action_confirm()
+```
+
+| Module | Model | Gated method | Trigger |
+|---|---|---|---|
 | `odoo_approval_sale` | `sale.order` | `action_confirm` | `on_confirm` |
 | `odoo_approval_purchase` | `purchase.order` | `button_confirm` | `on_confirm` |
 | `odoo_approval_account` | `account.move` | `action_post` | `on_post` |
 | `odoo_approval_expense` | `hr.expense` | `action_submit` | `on_submit` |
 
-```python
-def action_confirm(self):
-    if self.env.context.get("approval_bypass"):
-        return super().action_confirm()
-    if any(o._evaluate_approval_rules("on_confirm") for o in self):
-        return self._approval_block_action()
-    return super().action_confirm()
+The mixin also exposes `approval_engine_state` / `approval_engine_request_ids` for list and form
+badges, computed with **one query per recordset**.
 
-def _on_approval_approved(self):
-    return self.with_context(approval_bypass=True).action_confirm()
-```
+### 4.2 Any model: create / write hook (`models/base_approval.py`)
 
-## D. Security model (any internal user can approve)
+`base.create()` / `base.write()` call `_approval_engine_trigger(event)`, which returns immediately
+unless the registry is ready, the model is not one of the engine's own, `approval_bypass` is not
+set, and the model has at least one active rule for the event. That last check uses an
+`ormcache` that is cleared whenever a rule changes, so the hook costs almost nothing on models
+without rules.
 
-- ACL: `base.group_user` gets read on rule/trigger/request/line (+ wizard RWC); managers full.
-- Record rules (on `base.group_user`) scope rows to requester-or-approver; managers see all.
-- Decisions (`action_quick_approve`, wizard) verify `env.user == line.approver_id` (or manager),
-  then run `request.sudo()._register_decision(...)` — so advancing the workflow (which creates the
-  next stage's lines) doesn't require the approver to own the engine's models.
-- The source action runs via `record.sudo()._on_approval_approved()` (the approval is the
-  authorization).
+---
 
-## E. UX & naming
+## 5. Security
 
-- Mixin fields are namespaced: `approval_engine_state`, `approval_engine_request_ids`.
-- Users see **stages** (the `approval.engine.request.line.stage_label` = the stage's name,
-  else "Approval N") rather than raw "levels/steps".
-- "My Approvals" is a kanban board (one-click approve; reject requires a reason). Requests can be
-  reopened from any final state.
+| Who | Can |
+|---|---|
+| Internal user | read rules; read requests they made or can approve; comment in their chatter; cancel their own open requests |
+| Approver (candidate of the current stage) | approve / reject that stage from the inbox or the wizard |
+| Approvals Manager | full CRUD on rules (except Python code) and requests; decide any stage; step back; cancel |
+| Administrator (`base.group_system`) | additionally author `condition_python` / `approver_expression` |
+
+- **Requests and stage lines are read-only for regular users** (ACL + record rules). Every write
+  goes through engine methods that check permissions first and then use `sudo()`, so nobody can
+  edit their own request (e.g. add themselves as an approver or change its state).
+- **`_register_decision` only accepts the current, still-pending stage**, so a stale inbox or
+  wizard cannot re-decide a closed stage and skip the next approvers.
+- **Python code is admin-only.** Expressions are evaluated with superuser rights, so — like
+  server actions — they are restricted to `base.group_system` via field `groups`.
+- **Rules fail closed.** Domains and Python are validated when a rule is saved. If a condition
+  still fails at runtime (e.g. a field was removed later), the error is logged and the document
+  is **held for approval** rather than silently let through.
+- **Multi-company.** Rules only apply to documents of their company (or every company when
+  empty); requests belong to the document's company; managers see requests of their allowed
+  companies.
+
+---
+
+## 6. UI
+
+- **My Approvals** — kanban inbox of stages the user can decide (one-click approve; reject asks
+  for a reason).
+- **All Requests** — list / form with status bar, stages, chatter and a smart button to the
+  source document.
+- **Reporting ▸ Analysis** — graph / pivot dashboard (volume, outcome, average approval time) —
+  managers.
+- **Configuration ▸ Rules** — managers.
+
+---
+
+## 7. Tests
+
+87 `TransactionCase` tests tagged `approval` (engine 75, sale 6, purchase 2, invoicing 2,
+expenses 2), run in CI on Odoo 19 + PostgreSQL 16:
+
+| Area | Covered |
+|---|---|
+| Rules | domain / Python matching, validation on save, fail-closed evaluation, approver resolution |
+| Lifecycle | submit, single / multi-stage approve, reject, `min_approvals`, live group membership, step back, cancel, idempotent stages, stale-stage protection |
+| Security | record visibility, read-only requests and lines, no self-approval, admin-only Python, who may step back / cancel, multi-company rules |
+| Integrations | each gated action is held and then executed on approval; batch actions hold only what needs approval |

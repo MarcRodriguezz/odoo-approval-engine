@@ -17,15 +17,14 @@ class SaleOrder(models.Model):
         if self.env.context.get("approval_bypass"):
             return super().action_confirm()
 
-        blocked = False
-        for order in self:
-            if order._evaluate_approval_rules("on_confirm"):
-                blocked = True
-
-        if blocked:
-            return self._approval_block_action()
-
-        return super().action_confirm()
+        blocked = self._approval_split_blocked("on_confirm")
+        if not blocked:
+            return super().action_confirm()
+        # Confirm the orders that need no approval; hold only the others.
+        to_confirm = self - blocked
+        if to_confirm:
+            super(SaleOrder, to_confirm).action_confirm()
+        return blocked._approval_block_action(done=to_confirm)
 
     def _on_approval_approved(self):
         """Called by the engine when the approval request is fully approved.
