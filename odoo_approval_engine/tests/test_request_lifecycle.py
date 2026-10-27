@@ -472,6 +472,24 @@ class TestRequestLifecycle(TransactionCase):
         with self.assertRaises(UserError):
             request._register_decision(line, "approved")
 
+    def test_decision_on_decided_stage_raises(self):
+        """Re-deciding an already approved stage must not advance the request
+        past the current stage (stale inbox / wizard)."""
+        rule = self._make_rule(levels=2)
+        request = self._make_pending_request(rule)
+        line1 = self._current_stage(request)
+        request._register_decision(line1, "approved", actor=self.approver)
+        self.assertEqual(request.current_level, 2)
+
+        with self.assertRaises(UserError):
+            request._register_decision(line1, "approved", actor=self.approver2)
+        with self.assertRaises(UserError):
+            request._register_decision(line1, "rejected", actor=self.approver2)
+
+        self.assertEqual(request.state, "pending")
+        self.assertEqual(request.current_level, 2)
+        self.assertEqual(self._current_stage(request).decision, "pending")
+
     # ------------------------------------------------------------------
     # Tests: _advance_level helper directly
     # ------------------------------------------------------------------

@@ -277,6 +277,11 @@ class ApprovalRequest(models.Model):
             raise UserError(
                 _("Cannot register a decision on a request that is not pending.")
             )
+        # A stale inbox/wizard may point at a stage that was already decided;
+        # deciding it again would advance the request from the *current* stage
+        # and skip its approvers.
+        if line.decision != "pending" or line.level != self.current_level:
+            raise UserError(_("This stage is no longer awaiting a decision."))
 
         # --- Rejection: immediate ------------------------------------------
         if decision == "rejected":
