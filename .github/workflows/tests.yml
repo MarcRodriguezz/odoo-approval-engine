@@ -1,0 +1,49 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  odoo-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      image: odoo:19.0
+      options: --user root
+    services:
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_USER: odoo
+          POSTGRES_PASSWORD: odoo
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd "pg_isready -U odoo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install modules and run the test suite
+        run: |
+          odoo -d approval_test \
+            --addons-path=/usr/lib/python3/dist-packages/odoo/addons,"$GITHUB_WORKSPACE" \
+            -i odoo_approval_sale,odoo_approval_purchase,odoo_approval_account,odoo_approval_expense \
+            --db_host=db --db_user=odoo --db_password=odoo \
+            --test-enable \
+            --test-tags=/odoo_approval_engine,/odoo_approval_sale,/odoo_approval_purchase,/odoo_approval_account,/odoo_approval_expense \
+            --stop-after-init --max-cron-threads=0 --log-level=test \
+            2>&1 | tee odoo-tests.log
+
+      - name: Check results
+        run: |
+          grep -E "tests? (when loading|in [0-9.]+s)|failed, .* error" odoo-tests.log || true
+          if grep -qE " (ERROR|CRITICAL) " odoo-tests.log; then
+            echo "::error::Odoo reported errors during install or tests"
+            grep -E " (ERROR|CRITICAL) " odoo-tests.log
+            exit 1
+          fi

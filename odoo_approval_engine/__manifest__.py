@@ -12,16 +12,14 @@ business action (confirm a sale, post an invoice, submit an expense...) until th
 right people approve — with multi-stage flows, a live inbox, full traceability
 and a reporting dashboard.
 
-This purchase includes the engine **and** the ready-made integrations for Sales,
+The suite ships the engine **and** ready-made integrations for Sales,
 Purchase, Invoicing and Expenses (install only the ones you need).
 """,
     "author": "Marc Rodriguez",
     "website": "https://github.com/MarcRodriguezz/odoo-approval-engine",
     "support": "https://github.com/MarcRodriguezz/odoo-approval-engine/issues",
-    "license": "OPL-1",
+    "license": "LGPL-3",
     "category": "Productivity/Approvals",
-    "price": 149.00,
-    "currency": "EUR",
     "depends": ["base", "mail"],
     "data": [
         "security/approval_security.xml",

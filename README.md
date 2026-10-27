@@ -1,5 +1,9 @@
 # Approval & Rules Engine for Odoo
 
+[![Tests](https://github.com/MarcRodriguezz/odoo-approval-engine/actions/workflows/tests.yml/badge.svg)](https://github.com/MarcRodriguezz/odoo-approval-engine/actions/workflows/tests.yml)
+[![License: LGPL-3](https://img.shields.io/badge/license-LGPL--3-blue.svg)](LICENSE)
+![Odoo 19](https://img.shields.io/badge/Odoo-19.0-714B67.svg)
+
 Stop chasing approvals over email and WhatsApp. Define **approval rules** once, and Odoo
 automatically holds the right actions until the right people say "yes" — with a full history of
 who approved what, when, and why.
@@ -185,5 +189,5 @@ Modules: `odoo_approval_engine` (model-agnostic core) + integrations `odoo_appro
 
 ## License
 
-`odoo_approval_engine` is licensed under the **Odoo Proprietary License v1.0 (OPL-1)** — see
-[`LICENSE`](LICENSE). The Sales/Purchase/Invoicing/Expense integration modules are LGPL-3.
+All modules are licensed under the **GNU Lesser General Public License v3.0 (LGPL-3)** — see
+[`LICENSE`](LICENSE).

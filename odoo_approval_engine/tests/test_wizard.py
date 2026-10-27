@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for the approval.decision.wizard.
 
-The full-stack tests exercise approval.request._register_decision end to end.
+The full-stack tests exercise approval.engine.request._register_decision end to end.
 """
 from odoo.tests.common import TransactionCase
 from odoo.tests import tagged
@@ -132,13 +132,8 @@ class TestApprovalDecisionWizard(TransactionCase):
                 "comment": "Approved by test",
             }
         )
-        try:
-            wizard.action_approve()
-            self.assertEqual(line.decision, "approved")
-        except NotImplementedError:
-            self.skipTest(
-                "_register_decision not available; skipping full-stack approve test."
-            )
+        wizard.action_approve()
+        self.assertEqual(line.decision, "approved")
 
     # ------------------------------------------------------------------
     # action_reject
@@ -171,13 +166,8 @@ class TestApprovalDecisionWizard(TransactionCase):
                 "comment": "Rejected by test",
             }
         )
-        try:
-            wizard.action_reject()
-            self.assertEqual(line.decision, "rejected")
-        except NotImplementedError:
-            self.skipTest(
-                "_register_decision not available; skipping full-stack reject test."
-            )
+        wizard.action_reject()
+        self.assertEqual(line.decision, "rejected")
 
     # ------------------------------------------------------------------
     # Validation
